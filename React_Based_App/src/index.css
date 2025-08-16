@@ -45,7 +45,7 @@
   }
   
   .panel {
-    @apply bg-gradient-to-b from-white/5 to-white/2 border border-app-border rounded-xl p-4;
+    @apply bg-gradient-to-b from-white/5 to-white/5 border border-app-border rounded-xl p-4;
   }
   
   .section-header {
