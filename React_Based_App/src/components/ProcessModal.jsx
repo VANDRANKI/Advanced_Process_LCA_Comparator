@@ -1,410 +1,348 @@
-import React, { useState, useEffect } from 'react';
-import { X, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react'
 
-const ProcessModal = ({ isOpen, onClose, onSave, editingProcess, impactDb, environmentSettings }) => {
-  const [formData, setFormData] = useState({
-    knownProcess: 'Filtration',
-    customLabel: '',
-    parameters: {
-      pressure: 2,
-      flow: 200,
-      duration: 1
-    },
-    materials: [],
-    solvents: [],
-    outputs: {
-      energy: 0,
-      water: 0,
-      emissions: 0
-    }
-  });
+const ProcessModal = ({ 
+  isOpen, 
+  onClose, 
+  onSave, 
+  editingProcess, 
+  processCatalog, 
+  impactDb, 
+  calculateOutputs 
+}) => {
+  const [processType, setProcessType] = useState('')
+  const [customLabel, setCustomLabel] = useState('')
+  const [parameters, setParameters] = useState({})
+  const [materials, setMaterials] = useState([])
+  const [waters, setWaters] = useState([])
+  const [outputs, setOutputs] = useState({ energy: 0, water: 0, emissions: 0 })
 
-  const [expandedSections, setExpandedSections] = useState({
-    parameters: true,
-    materials: false,
-    outputs: false
-  });
-
-  const processOptions = [
-    'Filtration',
-    'Calcination',
-    'Hydrothermal',
-    'Milling',
-    'Sonication',
-    'Centrifuge',
-    'Drying',
-    'Washing',
-    'Annealing'
-  ];
-
+  // Initialize form when editing
   useEffect(() => {
     if (editingProcess) {
-      setFormData(editingProcess);
+      setProcessType(editingProcess.processType || '')
+      setCustomLabel(editingProcess.customLabel || '')
+      setParameters(editingProcess.parameters || {})
+      setMaterials(editingProcess.materials || [])
+      setWaters(editingProcess.waters || [])
+      setOutputs(editingProcess.outputs || { energy: 0, water: 0, emissions: 0 })
+    } else {
+      // Reset form for new process
+      setProcessType('')
+      setCustomLabel('')
+      setParameters({})
+      setMaterials([])
+      setWaters([])
+      setOutputs({ energy: 0, water: 0, emissions: 0 })
     }
-  }, [editingProcess]);
+  }, [editingProcess])
 
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
+  // Update parameters when process type changes
+  useEffect(() => {
+    if (processType && processCatalog[processType]) {
+      const spec = processCatalog[processType]
+      const newParams = {}
+      
+      spec.inputs.forEach(input => {
+        newParams[input.name] = input.defaultValue ?? spec.defaults[input.name] ?? ''
+      })
+      
+      setParameters(newParams)
+    }
+  }, [processType, processCatalog])
 
-  const handleParameterChange = (param, value) => {
-    setFormData(prev => ({
-      ...prev,
-      parameters: {
-        ...prev.parameters,
-        [param]: parseFloat(value) || 0
+  // Recalculate outputs when form data changes
+  useEffect(() => {
+    if (processType) {
+      const processData = {
+        processType,
+        customLabel,
+        parameters,
+        materials,
+        waters
       }
-    }));
-  };
+      const newOutputs = calculateOutputs(processData)
+      setOutputs(newOutputs)
+    }
+  }, [processType, parameters, materials, waters, calculateOutputs])
 
-  const toggleSection = (section) => {
-    setExpandedSections(prev => ({
+  const handleParameterChange = (paramName, value) => {
+    setParameters(prev => ({
       ...prev,
-      [section]: !prev[section]
-    }));
-  };
+      [paramName]: value
+    }))
+  }
 
   const addMaterial = () => {
-    setFormData(prev => ({
-      ...prev,
-      materials: [...prev.materials, { name: '', amount: 0, unit: 'kg' }]
-    }));
-  };
-
-  const removeMaterial = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      materials: prev.materials.filter((_, i) => i !== index)
-    }));
-  };
+    setMaterials(prev => [...prev, { name: '', amount: 0 }])
+  }
 
   const updateMaterial = (index, field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      materials: prev.materials.map((material, i) => 
-        i === index ? { ...material, [field]: value } : material
-      )
-    }));
-  };
+    setMaterials(prev => prev.map((material, i) => 
+      i === index ? { ...material, [field]: value } : material
+    ))
+  }
 
-  const addSolvent = () => {
-    setFormData(prev => ({
-      ...prev,
-      solvents: [...prev.solvents, { name: '', amount: 0, unit: 'L' }]
-    }));
-  };
+  const removeMaterial = (index) => {
+    setMaterials(prev => prev.filter((_, i) => i !== index))
+  }
 
-  const removeSolvent = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      solvents: prev.solvents.filter((_, i) => i !== index)
-    }));
-  };
+  const addWater = () => {
+    setWaters(prev => [...prev, { name: '', volumeL: 0 }])
+  }
 
-  const updateSolvent = (index, field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      solvents: prev.solvents.map((solvent, i) => 
-        i === index ? { ...solvent, [field]: value } : solvent
-      )
-    }));
-  };
+  const updateWater = (index, field, value) => {
+    setWaters(prev => prev.map((water, i) => 
+      i === index ? { ...water, [field]: value } : water
+    ))
+  }
 
-  const calculateOutputs = () => {
-    // Simple calculation based on parameters
-    const { pressure, flow, duration } = formData.parameters;
-    const energy = (pressure * flow * duration) / 100;
-    const water = flow * duration / 10;
-    const emissions = energy * 0.5;
-
-    setFormData(prev => ({
-      ...prev,
-      outputs: {
-        energy: parseFloat(energy.toFixed(2)),
-        water: parseFloat(water.toFixed(2)),
-        emissions: parseFloat(emissions.toFixed(2))
-      }
-    }));
-  };
-
-  useEffect(() => {
-    calculateOutputs();
-  }, [formData.parameters]);
+  const removeWater = (index) => {
+    setWaters(prev => prev.filter((_, i) => i !== index))
+  }
 
   const handleSave = () => {
-    onSave(formData);
-  };
+    if (!processType) {
+      alert('Please select a process type')
+      return
+    }
 
-  if (!isOpen) return null;
+    const processData = {
+      processType,
+      customLabel,
+      parameters,
+      materials,
+      waters
+    }
+
+    onSave(processData)
+  }
+
+  if (!isOpen) return null
+
+  const spec = processCatalog[processType]
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Modal Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
-          <h3 className="text-2xl font-bold text-gray-800">
-            {editingProcess ? 'Edit Process' : 'Add New Process'}
-          </h3>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <X className="w-6 h-6 text-gray-500" />
-          </button>
-        </div>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-app-panel border border-app-border rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-app-text">
+              {editingProcess ? 'Edit Process' : 'Add New Process'}
+            </h2>
+            <button
+              onClick={onClose}
+              className="text-app-muted hover:text-app-text transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
 
-        <div className="p-6 space-y-6">
-          {/* Known Process Selection */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Process Selection */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-2">
-                Known process
+              <label className="block text-sm font-medium text-app-muted mb-2">
+                Process Type *
               </label>
-              <div className="relative">
-                <select
-                  value={formData.knownProcess}
-                  onChange={(e) => handleInputChange('knownProcess', e.target.value)}
-                  className="w-full bg-gray-800 text-white py-3 px-4 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                >
-                  {processOptions.map(option => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white pointer-events-none" />
-              </div>
+              <select
+                value={processType}
+                onChange={(e) => setProcessType(e.target.value)}
+                className="w-full bg-app-panel border border-app-border rounded-lg px-3 py-2 text-app-text focus:ring-2 focus:ring-app-primary focus:border-transparent"
+              >
+                <option value="">Select a process type</option>
+                {Object.keys(processCatalog).map(name => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-2">
-                Custom label
+              <label className="block text-sm font-medium text-app-muted mb-2">
+                Custom Label
               </label>
               <input
                 type="text"
-                value={formData.customLabel}
-                onChange={(e) => handleInputChange('customLabel', e.target.value)}
+                value={customLabel}
+                onChange={(e) => setCustomLabel(e.target.value)}
                 placeholder="Optional label (e.g., Reactor #2)"
-                className="w-full bg-gray-800 text-white py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-gray-400"
+                className="w-full bg-app-panel border border-app-border rounded-lg px-3 py-2 text-app-text focus:ring-2 focus:ring-app-primary focus:border-transparent"
               />
             </div>
           </div>
 
-          {/* Parameters Section */}
-          <div className="bg-gray-800 rounded-lg">
-            <button
-              onClick={() => toggleSection('parameters')}
-              className="w-full flex justify-between items-center p-4 text-white font-medium"
-            >
-              <span>Parameters</span>
-              {expandedSections.parameters ? 
-                <ChevronUp className="w-5 h-5" /> : 
-                <ChevronDown className="w-5 h-5" />
-              }
-            </button>
-            
-            {expandedSections.parameters && (
-              <div className="px-4 pb-4 space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm text-cyan-400 mb-2">
-                      Pressure (bar)
+          {/* Dynamic Parameters */}
+          {spec && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-app-text mb-4">Parameters</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {spec.inputs.map(input => (
+                  <div key={input.name}>
+                    <label className="block text-sm font-medium text-app-muted mb-2">
+                      {input.label}
                     </label>
                     <input
-                      type="number"
-                      value={formData.parameters.pressure}
-                      onChange={(e) => handleParameterChange('pressure', e.target.value)}
-                      className="w-full bg-gray-700 text-white py-2 px-3 rounded focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      type={input.type}
+                      step={input.step}
+                      placeholder={input.placeholder}
+                      value={parameters[input.name] || ''}
+                      onChange={(e) => handleParameterChange(input.name, e.target.value)}
+                      className="w-full bg-app-panel border border-app-border rounded-lg px-3 py-2 text-app-text focus:ring-2 focus:ring-app-primary focus:border-transparent"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm text-cyan-400 mb-2">
-                      Flow (L/h)
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.parameters.flow}
-                      onChange={(e) => handleParameterChange('flow', e.target.value)}
-                      className="w-full bg-gray-700 text-white py-2 px-3 rounded focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-cyan-400 mb-2">
-                      Duration (hours)
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.parameters.duration}
-                      onChange={(e) => handleParameterChange('duration', e.target.value)}
-                      className="w-full bg-gray-700 text-white py-2 px-3 rounded focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    />
-                  </div>
-                </div>
+                ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Materials & Solvents Section */}
-          <div className="bg-gray-800 rounded-lg">
-            <button
-              onClick={() => toggleSection('materials')}
-              className="w-full flex justify-between items-center p-4 text-white font-medium"
-            >
-              <span>Materials & Solvents</span>
-              {expandedSections.materials ? 
-                <ChevronUp className="w-5 h-5" /> : 
-                <ChevronDown className="w-5 h-5" />
-              }
-            </button>
-            
-            {expandedSections.materials && (
-              <div className="px-4 pb-4 space-y-4">
-                {/* Materials */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm text-cyan-400">Materials</label>
-                    <button
-                      onClick={addMaterial}
-                      className="text-cyan-400 hover:text-cyan-300"
+          {/* Materials Section */}
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-app-text">Materials</h3>
+              <button
+                onClick={addMaterial}
+                className="px-3 py-1 bg-app-primary text-white rounded-lg text-sm hover:bg-app-primary-700 transition-colors"
+              >
+                Add Material
+              </button>
+            </div>
+            <div className="space-y-3">
+              {materials.map((material, index) => (
+                <div key={index} className="grid grid-cols-3 gap-3 items-end">
+                  <div>
+                    <label className="block text-sm font-medium text-app-muted mb-2">
+                      Chemical
+                    </label>
+                    <select
+                      value={material.name}
+                      onChange={(e) => updateMaterial(index, 'name', e.target.value)}
+                      className="w-full bg-app-panel border border-app-border rounded-lg px-3 py-2 text-app-text focus:ring-2 focus:ring-app-primary focus:border-transparent"
                     >
-                      <Plus className="w-4 h-4" />
-                    </button>
+                      <option value="">Select chemical</option>
+                      {impactDb.chemicals.map(chem => (
+                        <option key={chem.name} value={chem.name}>{chem.name}</option>
+                      ))}
+                    </select>
                   </div>
-                  {formData.materials.map((material, index) => (
-                    <div key={index} className="flex gap-2 mb-2">
-                      <input
-                        type="text"
-                        placeholder="Material name"
-                        value={material.name}
-                        onChange={(e) => updateMaterial(index, 'name', e.target.value)}
-                        className="flex-1 bg-gray-700 text-white py-2 px-3 rounded focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Amount"
-                        value={material.amount}
-                        onChange={(e) => updateMaterial(index, 'amount', e.target.value)}
-                        className="w-20 bg-gray-700 text-white py-2 px-3 rounded focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                      />
-                      <select
-                        value={material.unit}
-                        onChange={(e) => updateMaterial(index, 'unit', e.target.value)}
-                        className="w-16 bg-gray-700 text-white py-2 px-2 rounded focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                      >
-                        <option value="kg">kg</option>
-                        <option value="g">g</option>
-                      </select>
-                      <button
-                        onClick={() => removeMaterial(index)}
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
+                  <div>
+                    <label className="block text-sm font-medium text-app-muted mb-2">
+                      Amount (kg)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={material.amount}
+                      onChange={(e) => updateMaterial(index, 'amount', e.target.value)}
+                      className="w-full bg-app-panel border border-app-border rounded-lg px-3 py-2 text-app-text focus:ring-2 focus:ring-app-primary focus:border-transparent"
+                    />
+                  </div>
+                  <button
+                    onClick={() => removeMaterial(index)}
+                    className="px-3 py-2 bg-app-danger/20 border border-app-danger text-app-danger rounded-lg hover:bg-app-danger/30 transition-colors"
+                  >
+                    Remove
+                  </button>
                 </div>
+              ))}
+            </div>
+          </div>
 
-                {/* Solvents */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm text-cyan-400">Solvents</label>
-                    <button
-                      onClick={addSolvent}
-                      className="text-cyan-400 hover:text-cyan-300"
+          {/* Waters Section */}
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-app-text">Solvents</h3>
+              <button
+                onClick={addWater}
+                className="px-3 py-1 bg-app-primary text-white rounded-lg text-sm hover:bg-app-primary-700 transition-colors"
+              >
+                Add Solvent
+              </button>
+            </div>
+            <div className="space-y-3">
+              {waters.map((water, index) => (
+                <div key={index} className="grid grid-cols-3 gap-3 items-end">
+                  <div>
+                    <label className="block text-sm font-medium text-app-muted mb-2">
+                      Water Type
+                    </label>
+                    <select
+                      value={water.name}
+                      onChange={(e) => updateWater(index, 'name', e.target.value)}
+                      className="w-full bg-app-panel border border-app-border rounded-lg px-3 py-2 text-app-text focus:ring-2 focus:ring-app-primary focus:border-transparent"
                     >
-                      <Plus className="w-4 h-4" />
-                    </button>
+                      <option value="">Select water type</option>
+                      {impactDb.waters.map(waterType => (
+                        <option key={waterType.name} value={waterType.name}>{waterType.name}</option>
+                      ))}
+                    </select>
                   </div>
-                  {formData.solvents.map((solvent, index) => (
-                    <div key={index} className="flex gap-2 mb-2">
-                      <input
-                        type="text"
-                        placeholder="Solvent name"
-                        value={solvent.name}
-                        onChange={(e) => updateSolvent(index, 'name', e.target.value)}
-                        className="flex-1 bg-gray-700 text-white py-2 px-3 rounded focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Amount"
-                        value={solvent.amount}
-                        onChange={(e) => updateSolvent(index, 'amount', e.target.value)}
-                        className="w-20 bg-gray-700 text-white py-2 px-3 rounded focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                      />
-                      <select
-                        value={solvent.unit}
-                        onChange={(e) => updateSolvent(index, 'unit', e.target.value)}
-                        className="w-16 bg-gray-700 text-white py-2 px-2 rounded focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                      >
-                        <option value="L">L</option>
-                        <option value="mL">mL</option>
-                      </select>
-                      <button
-                        onClick={() => removeSolvent(index)}
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
+                  <div>
+                    <label className="block text-sm font-medium text-app-muted mb-2">
+                      Volume (L)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={water.volumeL}
+                      onChange={(e) => updateWater(index, 'volumeL', e.target.value)}
+                      className="w-full bg-app-panel border border-app-border rounded-lg px-3 py-2 text-app-text focus:ring-2 focus:ring-app-primary focus:border-transparent"
+                    />
+                  </div>
+                  <button
+                    onClick={() => removeWater(index)}
+                    className="px-3 py-2 bg-app-danger/20 border border-app-danger text-app-danger rounded-lg hover:bg-app-danger/30 transition-colors"
+                  >
+                    Remove
+                  </button>
                 </div>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
 
-          {/* Process Outputs Section */}
-          <div className="bg-gray-800 rounded-lg">
+          {/* Outputs Preview */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-app-text mb-4">Calculated Outputs</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-app-panel/50 border border-app-border rounded-lg p-4">
+                <div className="text-sm text-app-muted mb-1">Energy</div>
+                <div className="text-xl font-semibold text-app-text">
+                  {outputs.energy.toLocaleString()} kWh
+                </div>
+              </div>
+              <div className="bg-app-panel/50 border border-app-border rounded-lg p-4">
+                <div className="text-sm text-app-muted mb-1">Water</div>
+                <div className="text-xl font-semibold text-app-text">
+                  {outputs.water.toLocaleString()} kg
+                </div>
+              </div>
+              <div className="bg-app-panel/50 border border-app-border rounded-lg p-4">
+                <div className="text-sm text-app-muted mb-1">Emissions</div>
+                <div className="text-xl font-semibold text-app-text">
+                  {outputs.emissions.toLocaleString()} kg CO₂e
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3">
             <button
-              onClick={() => toggleSection('outputs')}
-              className="w-full flex justify-between items-center p-4 text-white font-medium"
+              onClick={onClose}
+              className="px-4 py-2 bg-transparent border border-app-border text-app-muted rounded-lg hover:bg-app-panel/50 transition-colors"
             >
-              <span>This Process Outputs</span>
-              {expandedSections.outputs ? 
-                <ChevronUp className="w-5 h-5" /> : 
-                <ChevronDown className="w-5 h-5" />
-              }
+              Cancel
             </button>
-            
-            {expandedSections.outputs && (
-              <div className="px-4 pb-4 space-y-3">
-                <div className="grid grid-cols-3 gap-4 text-white">
-                  <div>
-                    <label className="block text-sm text-cyan-400 mb-1">Energy (kWh)</label>
-                    <div className="bg-gray-700 py-2 px-3 rounded">
-                      {formData.outputs.energy}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm text-cyan-400 mb-1">Water (kg)</label>
-                    <div className="bg-gray-700 py-2 px-3 rounded">
-                      {formData.outputs.water}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm text-cyan-400 mb-1">Emissions (kg CO₂e)</label>
-                    <div className="bg-gray-700 py-2 px-3 rounded">
-                      {formData.outputs.emissions}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            <button
+              onClick={handleSave}
+              className="px-4 py-2 bg-gradient-to-b from-app-primary-700 to-app-primary text-white rounded-lg font-medium hover:from-app-primary-700 hover:to-app-primary-700 transition-colors"
+            >
+              {editingProcess ? 'Update Process' : 'Save Process'}
+            </button>
           </div>
-        </div>
-
-        {/* Modal Footer */}
-        <div className="flex justify-end p-6 border-t border-gray-200">
-          <button
-            onClick={handleSave}
-            className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-8 rounded-full transition-colors duration-200"
-          >
-            Save
-          </button>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default ProcessModal;
+export default ProcessModal

@@ -1,0 +1,78 @@
+**Prompt for an Enhanced React-Based Application**
+
+This prompt outlines a complete re-evaluation and development plan for a web application. The goal is to build a highly functional and well-structured user interface using React and Tailwind CSS that replicates and enhances the core logic from the old files.
+
+#### **I. Core Objective & Rationale**
+
+The primary objective is to develop a single-page application (SPA) using **React (with Vite)** and **Tailwind CSS**. This application must replicate the core logic and functionality of the provided "old files" (`@/index.html`, `@/styles.css`, `@/app.js`) while completely overhauling the user interface.
+
+The new UI will **not be a dumb copy** of the provided "reference UI" (`@/Reference_for_UI_Design`). Those screenshots are just for design inspiration and give a general idea of the desired modern aesthetic. They may not include all the necessary features, processes, or complex options. The **old files are the single source of truth** for all the features, functionalities, process steps, parameters, materials, solvents, and the five specific visualizations that must be included. The new UI must be a thoughtful and efficient design that intelligently incorporates all these necessary features, going beyond the simple layout of the reference screenshots.
+
+The key challenges to address are:
+* **Structural Integrity:** The application must be broken down into well-defined, reusable React components. Avoid stuffing all logic into a single `App.jsx` file.
+* **Feature Integration:** All functionalities present in the old JavaScript file, including parameter handling, dynamic modal pop-ups for different processes, and the specific data visualizations, must be seamlessly integrated into the new React structure.
+* **Complex UI:** The design must intelligently handle dynamic content, such as modals for different process types and interactive visualizations, rather than a static, predefined layout.
+
+The new UI should be an intelligent and dynamic container for this logic, not just a static webpage.
+
+---
+
+#### **II. Application Structure & Component Breakdown**
+
+The application should be built with a clear component hierarchy to ensure maintainability and scalability. The following is a suggested component structure:
+
+* **`App.jsx`**: The root component. This should manage the overall state (e.g., list of processes, selected processes for comparison, active modal) and render the main layout components.
+* **`Header.jsx`**: A static component for the application's heading, subheading, and a brief description. This can include relevant icons or a logo.
+* **`EnvironmentSettings.jsx`**: A component dedicated to the initial environment configuration.
+    * **Ambient Temperature**: Use a slider component (e.g., from a library like `React-Slider` or a custom-built one) with a range of `0°C` to `100°C`. The value should be clearly displayed.
+    * **Electricity Dataset**: Use a dropdown menu (select component) to allow users to choose from a predefined list of datasets.
+* **`ProcessManager.jsx`**: A central component that renders the "Add Process" button and the list of processes. This component will handle the state for the list of processes and pass down props to child components.
+* **`ProcessModal.jsx`**: A dynamic modal component that renders different input forms based on the selected process type.
+    * This component will be triggered by the "Add Process" or "Edit" button.
+    * It must **dynamically render different fields** (parameters, materials, solvents) based on the specific process selected. This is a critical point—the UI for **Process A** must be different from the UI for **Process B**.
+    * It will handle form state and validation before a user can save.
+* **`ProcessCard.jsx`**: A component representing a single process in the list.
+    * It should display an overview of the process inputs (parameters, material, and solvents) and outputs (energy, water, and emissions).
+    * It must contain buttons for **Edit** and **Delete**.
+    * It must implement the interactive selection feature:
+        * **On Hover**: Apply a distinct background effect.
+        * **On Click**: Toggle a "selected" state, represented by a visible tick mark or check icon. This state should be passed up to the parent `ProcessManager` component.
+* **`VisualizationDashboard.jsx`**: This component will only render when at least two processes are selected for comparison.
+    * It will display the **five required visualization plots**, which must be replicated from the functionality of the old `app.js` file.
+    * A button to **Export Report as PDF** should be present. The PDF export functionality should be robust and capture all relevant data and visualizations.
+* **`VisualizationPlot.jsx`**: A sub-component for each of the five distinct plot types. This promotes reusability and clean code. A library like `Chart.js` or `Recharts` should be used for rendering these visualizations.
+
+The above structure is just a suggestion and may need to be adjusted based on the specific requirements and design choices and such and etc.., 
+
+---
+
+#### **III. Functional Requirements & Logic**
+
+1.  **Initial Page Load:** The first view should display the `Header.jsx` and `EnvironmentSettings.jsx` components, followed by the "Add Process" button and an empty `ProcessManager`.
+2.  **Add/Edit Process Flow:**
+    * Clicking the **"Add Process"** button opens the `ProcessModal`. The modal should first prompt the user to select a process type.
+    * Once a process type is selected, the modal's UI should dynamically change to display the specific parameters, materials, and solvent inputs for that process.
+    * Clicking **"Save"** or **"Update"** in the modal should trigger a calculation (based on the logic in the old `app.js`) to determine the energy, water, and emissions outputs.
+    * The modal closes, and the new or updated process is added to the list in `ProcessManager` and displayed via a new `ProcessCard`.
+3.  **Process Management:**
+    * **Delete:** Clicking the delete button on a `ProcessCard` removes the corresponding item from the state, updating the list.
+    * **Edit:** Clicking the edit button opens the `ProcessModal` pre-populated with the data of the selected process, allowing the user to modify and save the changes.
+4.  **Comparison and Visualization:**
+    * The "Compare" button should remain disabled until at least two processes are selected.
+    * Clicking **"Compare"** renders the `VisualizationDashboard` component below the list.
+    * The dashboard will display the five distinct visualizations, each presenting a different aspect of the comparison between the selected processes (e.g., energy consumption, water usage, emissions breakdown). **The specific visualization types from the old files must be recreated.**
+5.  **Data Handling & Persistence:**
+    * The application's state (list of processes, environment settings) should be managed efficiently. A state management library like **Redux** or **Context API** is a valid option, especially if the application grows. For this scope, `useState` and `useEffect` with prop drilling may suffice if managed carefully.
+6. and these are all just hints and you need to do more, okay, this is just for you to give a idea
+
+---
+
+#### **IV. Technical Stack & Implementation Details**
+
+* **Framework:** React (Vite)
+* **Styling:** Tailwind CSS (to be integrated for all components)
+* **Visualization:** A chart library like `Chart.js`, `Recharts`, or similar, based on ease of integration and customization.
+* **PDF Export:** A library like `html2canvas` and `jsPDF` for client-side PDF generation.
+* **Libraries:** Any library used (e.g., for sliders, modals, charts) should be well-documented and easy to integrate with React. Custom, reusable components are preferred over relying on overly complex third-party libraries.
+
+**Crucial Point:** Re-read and deeply analyze the old `app.js` file. The core logic for calculating outputs and generating data for the visualizations is the most important part to extract. **Do not simply copy the UI; understand the underlying functions and rebuild them using a React-based approach.** The new UI should be an intelligent and dynamic container for this logic, not just a static webpage. and these are all just hints and you need to do more, okay, this is just for you to give a idea
