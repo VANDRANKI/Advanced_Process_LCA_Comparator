@@ -1,128 +1,135 @@
-import React, { useState, useEffect } from "react";
-import Header from "./components/Header";
-import ProcessComparison from "./components/ProcessComparison";
-import Controls from "./components/Controls";
-import ComparisonResults from "./components/ComparisonResults";
-import Visualizations from "./components/Visualizations";
-import ImpactDatabase from "./components/ImpactDatabase";
-import Footer from "./components/Footer";
-import { useProcessData } from "./hooks/useProcessData";
-import { useImpactDatabase } from "./hooks/useImpactDatabase";
+import React, { useState, useEffect } from 'react';
+import HeroSection from './components/HeroSection';
+import EnvironmentSettings from './components/EnvironmentSettings';
+import ProcessModal from './components/ProcessModal';
+import ProcessList from './components/ProcessList';
+import ComparisonChart from './components/ComparisonChart';
+import { useProcessData } from './hooks/useProcessData';
+import { useImpactDatabase } from './hooks/useImpactDatabase';
 
 function App() {
-  const [ambientTemp, setAmbientTemp] = useState(25);
-  const [selectedElectricityDataset, setSelectedElectricityDataset] =
-    useState("");
-  const [showResults, setShowResults] = useState(false);
-  const [comparisonData, setComparisonData] = useState(null);
+  const [processes, setProcesses] = useState([]);
+  const [selectedProcesses, setSelectedProcesses] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProcess, setEditingProcess] = useState(null);
+  const [environmentSettings, setEnvironmentSettings] = useState({
+    temperature: 25,
+    electricityDataset: 'GLO'
+  });
+  const [showComparison, setShowComparison] = useState(false);
 
-  const { processes, updateProcess, resetProcesses, saveProcesses } =
-    useProcessData();
-  const { impactDb, updateImpactDb, resetImpactDb, saveImpactDb } =
-    useImpactDatabase();
+  const { impactDb } = useImpactDatabase();
 
-  // Set default electricity dataset when impact DB loads
+  // Load processes from localStorage on mount
   useEffect(() => {
-    if (impactDb.electricity.length > 0 && !selectedElectricityDataset) {
-      const saved = localStorage.getItem("selectedElectricityDataset");
-      const defaultDataset =
-        saved && impactDb.electricity.find((e) => e.name === saved)
-          ? saved
-          : impactDb.electricity[0].name;
-      setSelectedElectricityDataset(defaultDataset);
+    const savedProcesses = localStorage.getItem('lca-processes');
+    if (savedProcesses) {
+      setProcesses(JSON.parse(savedProcesses));
     }
-  }, [impactDb.electricity, selectedElectricityDataset]);
+  }, []);
 
-  const handleCompareProcesses = () => {
-    const comparison = {
-      processA: processes.A,
-      processB: processes.B,
-      totalsA: calculateTotals(processes.A.steps),
-      totalsB: calculateTotals(processes.B.steps),
-      ambientTemp,
-      selectedElectricityDataset,
-      impactDb,
+  // Save processes to localStorage whenever processes change
+  useEffect(() => {
+    localStorage.setItem('lca-processes', JSON.stringify(processes));
+  }, [processes]);
+
+  const addProcess = (processData) => {
+    const newProcess = {
+      id: Date.now(),
+      ...processData,
+      createdAt: new Date().toISOString()
     };
-
-    setComparisonData(comparison);
-    setShowResults(true);
+    setProcesses([...processes, newProcess]);
+    setIsModalOpen(false);
   };
 
-  const calculateTotals = (steps) => {
-    return steps.reduce(
-      (acc, step) => {
-        acc.energy += Number(step.energy) || 0;
-        acc.water += Number(step.water) || 0;
-        acc.emissions += Number(step.emissions) || 0;
-        acc.emissionsEnergy += Number(step.emissionsEnergy) || 0;
-        acc.emissionsMaterials += Number(step.emissionsMaterials) || 0;
-        acc.emissionsWater += Number(step.emissionsWater) || 0;
-        return acc;
-      },
-      {
-        energy: 0,
-        water: 0,
-        emissions: 0,
-        emissionsEnergy: 0,
-        emissionsMaterials: 0,
-        emissionsWater: 0,
-      }
+  const updateProcess = (processData) => {
+    setProcesses(processes.map(p => 
+      p.id === editingProcess.id 
+        ? { ...processData, id: editingProcess.id, createdAt: editingProcess.createdAt }
+        : p
+    ));
+    setEditingProcess(null);
+    setIsModalOpen(false);
+  };
+
+  const deleteProcess = (id) => {
+    setProcesses(processes.filter(p => p.id !== id));
+    setSelectedProcesses(selectedProcesses.filter(pid => pid !== id));
+  };
+
+  const toggleProcessSelection = (id) => {
+    setSelectedProcesses(prev => 
+      prev.includes(id) 
+        ? prev.filter(pid => pid !== id)
+        : [...prev, id]
     );
   };
 
-  const handleReset = () => {
-    resetProcesses();
-    setShowResults(false);
-    setComparisonData(null);
+  const openEditModal = (process) => {
+    setEditingProcess(process);
+    setIsModalOpen(true);
   };
 
-  const handleSave = () => {
-    saveProcesses();
-    alert("Scenario saved locally.");
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingProcess(null);
   };
+
+  const handleCompare = () => {
+    if (selectedProcesses.length >= 2) {
+      setShowComparison(true);
+    }
+  };
+
+  const selectedProcessData = processes.filter(p => selectedProcesses.includes(p.id));
 
   return (
-    <div className="min-h-screen bg-app-bg text-app-text">
-      <Header
-        ambientTemp={ambientTemp}
-        setAmbientTemp={setAmbientTemp}
-        selectedElectricityDataset={selectedElectricityDataset}
-        setSelectedElectricityDataset={setSelectedElectricityDataset}
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <HeroSection />
+      
+      {/* Environment Settings */}
+      <EnvironmentSettings 
+        settings={environmentSettings}
+        onSettingsChange={setEnvironmentSettings}
+        onAddProcess={() => setIsModalOpen(true)}
         electricityOptions={impactDb.electricity}
       />
 
-      <main className="max-w-7xl mx-auto px-6 py-5 pb-12">
-        <ProcessComparison
+      {/* Process List */}
+      {processes.length > 0 && (
+        <ProcessList 
           processes={processes}
-          updateProcess={updateProcess}
-          ambientTemp={ambientTemp}
-          selectedElectricityDataset={selectedElectricityDataset}
+          selectedProcesses={selectedProcesses}
+          onToggleSelection={toggleProcessSelection}
+          onEdit={openEditModal}
+          onDelete={deleteProcess}
+          onCompare={handleCompare}
+          canCompare={selectedProcesses.length >= 2}
+        />
+      )}
+
+      {/* Comparison Chart */}
+      {showComparison && selectedProcessData.length >= 2 && (
+        <ComparisonChart 
+          processes={selectedProcessData}
+          environmentSettings={environmentSettings}
           impactDb={impactDb}
         />
+      )}
 
-        <Controls
-          onCompare={handleCompareProcesses}
-          onSave={handleSave}
-          onReset={handleReset}
-        />
-
-        {showResults && comparisonData && (
-          <ComparisonResults data={comparisonData} />
-        )}
-
-        {showResults && comparisonData && (
-          <Visualizations data={comparisonData} />
-        )}
-
-        <ImpactDatabase
+      {/* Process Modal */}
+      {isModalOpen && (
+        <ProcessModal 
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          onSave={editingProcess ? updateProcess : addProcess}
+          editingProcess={editingProcess}
           impactDb={impactDb}
-          updateImpactDb={updateImpactDb}
-          resetImpactDb={resetImpactDb}
-          saveImpactDb={saveImpactDb}
+          environmentSettings={environmentSettings}
         />
-      </main>
-
-      <Footer />
+      )}
     </div>
   );
 }
