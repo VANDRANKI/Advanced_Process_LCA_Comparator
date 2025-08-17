@@ -42,13 +42,7 @@ React_Based_App/
 ├── src/
 │   ├── components/          # React components
 │   │   ├── Header.jsx       # App header with settings
-│   │   ├── ProcessComparison.jsx  # Main comparison interface
-│   │   ├── ProcessSection.jsx     # Individual process (A or B)
-│   │   ├── ProcessStep.jsx        # Individual process step
 │   │   ├── Controls.jsx           # Compare/Save/Reset buttons
-│   │   ├── ComparisonResults.jsx  # Results table
-│   │   ├── Visualizations.jsx     # Charts and visualizations
-│   │   ├── ImpactDatabase.jsx     # Impact factors editor
 │   │   └── Footer.jsx             # App footer
 │   ├── hooks/               # Custom React hooks
 │   │   ├── useProcessData.js      # Process data management
