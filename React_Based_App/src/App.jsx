@@ -1,80 +1,84 @@
-import React, { useState, useEffect } from 'react'
-import Header from './components/Header'
-import EnvironmentSettings from './components/EnvironmentSettings'
-import ProcessManager from './components/ProcessManager'
-import ProcessModal from './components/ProcessModal'
-import VisualizationDashboard from './components/VisualizationDashboard'
-import { useImpactDatabase } from './hooks/useImpactDatabase'
-import { processCatalog } from './utils/processCatalog'
+import React, { useState, useEffect } from "react";
+import Header from "./components/Header";
+import EnvironmentSettings from "./components/EnvironmentSettings";
+import ProcessManager from "./components/ProcessManager";
+import ProcessModal from "./components/ProcessModal";
+import VisualizationDashboard from "./components/VisualizationDashboard";
+import { useImpactDatabase } from "./hooks/useImpactDatabase";
+import { processCatalog } from "./utils/processCatalog";
 
 function App() {
-  const { impactDb, updateImpactDb, resetImpactDb, saveImpactDb } = useImpactDatabase()
-  
+  const { impactDb, updateImpactDb, resetImpactDb, saveImpactDb } =
+    useImpactDatabase();
+
   // Environment settings
-  const [ambientTemp, setAmbientTemp] = useState(25)
-  const [selectedElectricityDataset, setSelectedElectricityDataset] = useState('')
-  
+  const [ambientTemp, setAmbientTemp] = useState(25);
+  const [selectedElectricityDataset, setSelectedElectricityDataset] =
+    useState("");
+
   // Process management
-  const [processes, setProcesses] = useState([])
-  const [selectedProcesses, setSelectedProcesses] = useState([])
-  const [showModal, setShowModal] = useState(false)
-  const [editingProcess, setEditingProcess] = useState(null)
-  
+  const [processes, setProcesses] = useState([]);
+  const [selectedProcesses, setSelectedProcesses] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [editingProcess, setEditingProcess] = useState(null);
+
   // Visualization
-  const [showVisualization, setShowVisualization] = useState(false)
-  const [impactIndicator, setImpactIndicator] = useState('GWP')
-  const [sunburstMetric, setSunburstMetric] = useState('energy')
-  const [heatmapMetric, setHeatmapMetric] = useState('energy')
+  const [showVisualization, setShowVisualization] = useState(false);
+  const [impactIndicator, setImpactIndicator] = useState("GWP");
+  const [sunburstMetric, setSunburstMetric] = useState("energy");
+  const [heatmapMetric, setHeatmapMetric] = useState("energy");
 
   // Initialize electricity dataset selection
   useEffect(() => {
     if (impactDb.electricity.length > 0 && !selectedElectricityDataset) {
-      const saved = localStorage.getItem('selectedElectricityDataset')
-      if (saved && impactDb.electricity.find(e => e.name === saved)) {
-        setSelectedElectricityDataset(saved)
+      const saved = localStorage.getItem("selectedElectricityDataset");
+      if (saved && impactDb.electricity.find((e) => e.name === saved)) {
+        setSelectedElectricityDataset(saved);
       } else {
-        setSelectedElectricityDataset(impactDb.electricity[0].name)
+        setSelectedElectricityDataset(impactDb.electricity[0].name);
       }
     }
-  }, [impactDb.electricity, selectedElectricityDataset])
+  }, [impactDb.electricity, selectedElectricityDataset]);
 
   // Process calculation function
   const calculateProcessOutputs = (processData) => {
-    const spec = processCatalog[processData.processType]
-    if (!spec) return { energy: 0, water: 0, emissions: 0 }
+    const spec = processCatalog[processData.processType];
+    if (!spec) return { energy: 0, water: 0, emissions: 0 };
 
-    const values = { ...processData.parameters, ambientC: ambientTemp }
-    
+    const values = { ...processData.parameters, ambientC: ambientTemp };
+
     // Calculate energy
-    const energyKWh = spec.energyKWh(values) || 0
-    
+    const energyKWh = spec.energyKWh(values) || 0;
+
     // Calculate water
-    let waterKg = spec.waterKg ? spec.waterKg(values) || 0 : 0
-    
+    let waterKg = spec.waterKg ? spec.waterKg(values) || 0 : 0;
+
     // Add water from solvents (1L ≈ 1kg)
-    processData.waters?.forEach(water => {
-      waterKg += Number(water.volumeL) || 0
-    })
+    processData.waters?.forEach((water) => {
+      waterKg += Number(water.volumeL) || 0;
+    });
 
     // Calculate emissions
-    const elecDataset = impactDb.electricity.find(e => e.name === selectedElectricityDataset)
-    const elecFactor = elecDataset?.[impactIndicator] || 0
-    
-    let emissions = energyKWh * elecFactor
+    const elecDataset = impactDb.electricity.find(
+      (e) => e.name === selectedElectricityDataset
+    );
+    const elecFactor = elecDataset?.[impactIndicator] || 0;
+
+    let emissions = energyKWh * elecFactor;
 
     // Add materials emissions
-    processData.materials?.forEach(material => {
-      const chemData = impactDb.chemicals.find(c => c.name === material.name)
-      const factor = chemData?.[impactIndicator] || 0
-      emissions += (Number(material.amount) || 0) * factor
-    })
+    processData.materials?.forEach((material) => {
+      const chemData = impactDb.chemicals.find((c) => c.name === material.name);
+      const factor = chemData?.[impactIndicator] || 0;
+      emissions += (Number(material.amount) || 0) * factor;
+    });
 
     // Add water emissions
-    processData.waters?.forEach(water => {
-      const waterData = impactDb.waters.find(w => w.name === water.name)
-      const factor = waterData?.[impactIndicator] || 0
-      emissions += (Number(water.volumeL) || 0) * factor
-    })
+    processData.waters?.forEach((water) => {
+      const waterData = impactDb.waters.find((w) => w.name === water.name);
+      const factor = waterData?.[impactIndicator] || 0;
+      emissions += (Number(water.volumeL) || 0) * factor;
+    });
 
     return {
       energy: Math.round(energyKWh * 100) / 100,
@@ -82,65 +86,76 @@ function App() {
       emissions: Math.round(emissions * 100) / 100,
       // Breakdown for visualizations
       emissionsEnergy: Math.round(energyKWh * elecFactor * 100) / 100,
-      emissionsMaterials: Math.round((emissions - energyKWh * elecFactor - (processData.waters?.reduce((sum, w) => {
-        const waterData = impactDb.waters.find(wd => wd.name === w.name)
-        const factor = waterData?.[impactIndicator] || 0
-        return sum + (Number(w.volumeL) || 0) * factor
-      }, 0) || 0)) * 100) / 100,
-      emissionsWater: Math.round((processData.waters?.reduce((sum, w) => {
-        const waterData = impactDb.waters.find(wd => wd.name === w.name)
-        const factor = waterData?.[impactIndicator] || 0
-        return sum + (Number(w.volumeL) || 0) * factor
-      }, 0) || 0) * 100) / 100
-    }
-  }
+      emissionsMaterials:
+        Math.round(
+          (emissions -
+            energyKWh * elecFactor -
+            (processData.waters?.reduce((sum, w) => {
+              const waterData = impactDb.waters.find(
+                (wd) => wd.name === w.name
+              );
+              const factor = waterData?.[impactIndicator] || 0;
+              return sum + (Number(w.volumeL) || 0) * factor;
+            }, 0) || 0)) *
+            100
+        ) / 100,
+      emissionsWater:
+        Math.round(
+          (processData.waters?.reduce((sum, w) => {
+            const waterData = impactDb.waters.find((wd) => wd.name === w.name);
+            const factor = waterData?.[impactIndicator] || 0;
+            return sum + (Number(w.volumeL) || 0) * factor;
+          }, 0) || 0) * 100
+        ) / 100,
+    };
+  };
 
   // Add new process
   const addProcess = (processData) => {
-    const outputs = calculateProcessOutputs(processData)
+    const outputs = calculateProcessOutputs(processData);
     const newProcess = {
       id: Date.now(),
       ...processData,
       outputs,
-      createdAt: new Date().toISOString()
-    }
-    setProcesses(prev => [...prev, newProcess])
-    setShowModal(false)
-  }
+      createdAt: new Date().toISOString(),
+    };
+    setProcesses((prev) => [...prev, newProcess]);
+    setShowModal(false);
+  };
 
   // Update existing process
   const updateProcess = (processData) => {
-    const outputs = calculateProcessOutputs(processData)
-    setProcesses(prev => prev.map(p => 
-      p.id === editingProcess.id 
-        ? { ...p, ...processData, outputs }
-        : p
-    ))
-    setEditingProcess(null)
-    setShowModal(false)
-  }
+    const outputs = calculateProcessOutputs(processData);
+    setProcesses((prev) =>
+      prev.map((p) =>
+        p.id === editingProcess.id ? { ...p, ...processData, outputs } : p
+      )
+    );
+    setEditingProcess(null);
+    setShowModal(false);
+  };
 
   // Delete process
   const deleteProcess = (processId) => {
-    setProcesses(prev => prev.filter(p => p.id !== processId))
-    setSelectedProcesses(prev => prev.filter(id => id !== processId))
-  }
+    setProcesses((prev) => prev.filter((p) => p.id !== processId));
+    setSelectedProcesses((prev) => prev.filter((id) => id !== processId));
+  };
 
   // Toggle process selection
   const toggleProcessSelection = (processId) => {
-    setSelectedProcesses(prev => 
+    setSelectedProcesses((prev) =>
       prev.includes(processId)
-        ? prev.filter(id => id !== processId)
+        ? prev.filter((id) => id !== processId)
         : [...prev, processId]
-    )
-  }
+    );
+  };
 
   // Handle compare button
   const handleCompare = () => {
     if (selectedProcesses.length >= 2) {
-      setShowVisualization(true)
+      setShowVisualization(true);
     }
-  }
+  };
 
   // Save scenario
   const saveScenario = () => {
@@ -148,25 +163,25 @@ function App() {
       processes,
       ambientTemp,
       selectedElectricityDataset,
-      timestamp: new Date().toISOString()
-    }
-    localStorage.setItem('lcaScenario', JSON.stringify(scenario))
-    alert('Scenario saved successfully!')
-  }
+      timestamp: new Date().toISOString(),
+    };
+    localStorage.setItem("lcaScenario", JSON.stringify(scenario));
+    alert("Scenario saved successfully!");
+  };
 
   // Reset all
   const resetAll = () => {
-    setProcesses([])
-    setSelectedProcesses([])
-    setShowVisualization(false)
-    setEditingProcess(null)
-    setShowModal(false)
-  }
+    setProcesses([]);
+    setSelectedProcesses([]);
+    setShowVisualization(false);
+    setEditingProcess(null);
+    setShowModal(false);
+  };
 
   return (
     <div className="min-h-screen bg-app-gradient text-app-text font-inter">
       <Header />
-      
+
       <main className="max-w-7xl mx-auto px-6 py-8">
         <EnvironmentSettings
           ambientTemp={ambientTemp}
@@ -181,8 +196,8 @@ function App() {
           selectedProcesses={selectedProcesses}
           onAddProcess={() => setShowModal(true)}
           onEditProcess={(process) => {
-            setEditingProcess(process)
-            setShowModal(true)
+            setEditingProcess(process);
+            setShowModal(true);
           }}
           onDeleteProcess={deleteProcess}
           onToggleSelection={toggleProcessSelection}
@@ -194,7 +209,9 @@ function App() {
 
         {showVisualization && selectedProcesses.length >= 2 && (
           <VisualizationDashboard
-            processes={processes.filter(p => selectedProcesses.includes(p.id))}
+            processes={processes.filter((p) =>
+              selectedProcesses.includes(p.id)
+            )}
             impactIndicator={impactIndicator}
             setImpactIndicator={setImpactIndicator}
             sunburstMetric={sunburstMetric}
@@ -210,8 +227,8 @@ function App() {
         <ProcessModal
           isOpen={showModal}
           onClose={() => {
-            setShowModal(false)
-            setEditingProcess(null)
+            setShowModal(false);
+            setEditingProcess(null);
           }}
           onSave={editingProcess ? updateProcess : addProcess}
           editingProcess={editingProcess}
@@ -222,10 +239,13 @@ function App() {
       )}
 
       <footer className="text-center text-app-muted py-8 mt-12">
-        <p>For demonstration only — formulas are simplified engineering estimates. Customize per your plant data.</p>
+        <p>
+          For demonstration only — formulas are simplified engineering
+          estimates. Customize per your plant data.
+        </p>
       </footer>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

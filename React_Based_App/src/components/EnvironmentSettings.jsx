@@ -1,19 +1,19 @@
-import React from 'react';
-import { ChevronDown } from 'lucide-react';
+import React from "react";
+import { ChevronDown } from "lucide-react";
 
-const EnvironmentSettings = ({ settings, onSettingsChange, onAddProcess, electricityOptions }) => {
+const EnvironmentSettings = ({
+  ambientTemp,
+  setAmbientTemp,
+  selectedElectricityDataset,
+  setSelectedElectricityDataset,
+  electricityDatasets,
+}) => {
   const handleTemperatureChange = (e) => {
-    onSettingsChange({
-      ...settings,
-      temperature: parseFloat(e.target.value)
-    });
+    setAmbientTemp(parseFloat(e.target.value));
   };
 
   const handleElectricityDatasetChange = (e) => {
-    onSettingsChange({
-      ...settings,
-      electricityDataset: e.target.value
-    });
+    setSelectedElectricityDataset(e.target.value);
   };
 
   return (
@@ -24,52 +24,63 @@ const EnvironmentSettings = ({ settings, onSettingsChange, onAddProcess, electri
       </h2>
 
       {/* Settings Card */}
-      <div className="bg-blue-50 rounded-3xl p-8 mb-8">
+      <div className="bg-blue-50 rounded-3xl p-8 mb-12">
         {/* Temperature Setting */}
-        <div className="mb-8">
+        <div className="mb-16 relative">
+          {" "}
+          {/* added more bottom margin */}
           <label className="block text-2xl font-semibold text-gray-700 mb-4">
-            Temperature
+            Ambient Temperature (°C)
           </label>
           <div className="relative">
             <input
               type="range"
               min="0"
-              max="100"
-              value={settings.temperature}
+              max="1000"
+              value={ambientTemp}
               onChange={handleTemperatureChange}
-              className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+              className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-cyan-600"
               style={{
-                background: `linear-gradient(to right, #0891b2 0%, #0891b2 ${settings.temperature}%, #e5e7eb ${settings.temperature}%, #e5e7eb 100%)`
+                background: `linear-gradient(to right, #0891b2 0%, #0891b2 ${
+                  (ambientTemp / 1000) * 100
+                }%, #ffffff ${(ambientTemp / 1000) * 100}%, #ffffff 100%)`,
               }}
             />
-            <div 
-              className="absolute top-1/2 transform -translate-y-1/2 w-6 h-6 bg-cyan-600 rounded-full shadow-lg"
-              style={{ left: `calc(${settings.temperature}% - 12px)` }}
-            />
-            <div className="flex justify-between text-sm text-gray-500 mt-2">
-              <span>0°C</span>
-              <span className="font-semibold text-gray-700">{settings.temperature}°C</span>
-              <span>100°C</span>
+
+            {/* Number below slider thumb */}
+            <div
+              className="absolute top-8 text-gray-700 font-semibold"
+              style={{
+                left: `calc(${(ambientTemp / 1000) * 100}% - 12px)`,
+              }}
+            >
+              {ambientTemp}
             </div>
           </div>
         </div>
 
         {/* Electricity Dataset Setting */}
-        <div className="mb-8">
+        <div className="mb-12 mt-12">
+          {" "}
+          {/* Increased gap with mb-12 and mt-12 */}
           <label className="block text-2xl font-semibold text-gray-700 mb-4">
             Electricity Dataset
           </label>
           <div className="relative">
             <select
-              value={settings.electricityDataset}
+              value={selectedElectricityDataset}
               onChange={handleElectricityDatasetChange}
               className="w-full bg-cyan-600 text-white text-lg font-medium py-4 px-6 rounded-2xl appearance-none cursor-pointer focus:outline-none focus:ring-4 focus:ring-cyan-300"
             >
-              <option value="GLO">Medium Voltage (GLO)</option>
-              <option value="US">Medium Voltage (US)</option>
-              <option value="EU">Medium Voltage (EU)</option>
-              <option value="CN">Medium Voltage (CN)</option>
-              <option value="IN">Medium Voltage (IN)</option>
+              {electricityDatasets.map((dataset, index) => (
+                <option
+                  key={index}
+                  value={dataset.name}
+                  className="text-gray-800"
+                >
+                  {dataset.name}
+                </option>
+              ))}
             </select>
             <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-white pointer-events-none" />
           </div>
@@ -77,17 +88,18 @@ const EnvironmentSettings = ({ settings, onSettingsChange, onAddProcess, electri
       </div>
 
       {/* Add Process Button */}
-      <div className="text-center">
+      {/* <div className="text-center">
         <button
           onClick={onAddProcess}
           className="bg-gray-600 hover:bg-gray-700 text-white text-xl font-semibold py-4 px-12 rounded-full transition-colors duration-200 shadow-lg hover:shadow-xl"
         >
           Add Process
         </button>
-      </div>
+      </div> */}
 
+      {/* Custom Thumb Styling */}
       <style jsx>{`
-        .slider::-webkit-slider-thumb {
+        input[type="range"]::-webkit-slider-thumb {
           appearance: none;
           width: 24px;
           height: 24px;
@@ -96,8 +108,7 @@ const EnvironmentSettings = ({ settings, onSettingsChange, onAddProcess, electri
           cursor: pointer;
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
-        
-        .slider::-moz-range-thumb {
+        input[type="range"]::-moz-range-thumb {
           width: 24px;
           height: 24px;
           background: #0891b2;
