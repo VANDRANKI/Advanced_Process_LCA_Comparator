@@ -53,6 +53,7 @@ const VisualizationDashboard = ({
       title: {
         text: 'Process Comparison - Totals',
         left: 'center',
+        top: 8,
         textStyle: { color: '#e8eeff' }
       },
       tooltip: {
@@ -60,8 +61,20 @@ const VisualizationDashboard = ({
         axisPointer: { type: 'shadow' }
       },
       legend: {
-        data: ['Energy (kWh)', 'Water (kg)', `Emissions (kg CO₂e - ${impactIndicator})`],
-        textStyle: { color: '#e8eeff' }
+        top: 44,
+        left: 'center',
+        itemwidth: 14,
+        itemheight: 8,
+        itemGap: 16,
+        textStyle: { color: '#e8eeff' },
+        data:['Energy (kWh)', 'Water (kg)', `Emissions (kg CO₂e - ${impactIndicator})`]
+      },
+      grid: {
+        top: 96,
+        right: 24,
+        left: 48,
+        bottom: 40,
+        containLabel: true
       },
       xAxis: {
         type: 'category',
