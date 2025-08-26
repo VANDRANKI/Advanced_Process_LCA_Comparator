@@ -76,12 +76,9 @@ const Header = () => {
                 onClick={handleStartClick}
                 className="group inline-flex items-center gap-2 rounded-xl bg-cyan-400/90 hover:bg-cyan-300 text-slate-900 font-semibold px-5 py-3 shadow-lg shadow-cyan-500/20 ring-1 ring-white/20"
               >
-                Start modeling
+                Start Process Modeling
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
               </button>
-              <a href="#" className="text-app-muted hover:text-white/90 text-sm">
-                Learn more
-              </a>
             </div>
           </div>
 
