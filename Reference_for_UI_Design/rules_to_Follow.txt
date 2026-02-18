@@ -9,11 +9,11 @@ The primary objective is to develop a single-page application (SPA) using **Reac
 The new UI will **not be a dumb copy** of the provided "reference UI" (`@/Reference_for_UI_Design`). Those screenshots are just for design inspiration and give a general idea of the desired modern aesthetic. They may not include all the necessary features, processes, or complex options. The **old files are the single source of truth** for all the features, functionalities, process steps, parameters, materials, solvents, and the five specific visualizations that must be included. The new UI must be a thoughtful and efficient design that intelligently incorporates all these necessary features, going beyond the simple layout of the reference screenshots.
 
 The key challenges to address are:
-* **Structural Integrity:** The application must be broken down into well-defined, reusable React components. Avoid stuffing all logic into a single `App.jsx` file.
-* **Feature Integration:** All functionalities present in the old JavaScript file, including parameter handling, dynamic modal pop-ups for different processes, and the specific data visualizations, must be seamlessly integrated into the new React structure.
-* **Complex UI:** The design must intelligently handle dynamic content, such as modals for different process types and interactive visualizations, rather than a static, predefined layout.
+* Structural Integrity: The application must be broken down into well-defined, reusable React components. Avoid stuffing all logic into a single `App.jsx` file.
+* Feature Integration: All functionalities present in the old JavaScript file, including parameter handling, dynamic modal pop-ups for different processes, and the specific data visualizations, must be seamlessly integrated into the new React structure.
+* Complex UI: The design must intelligently handle dynamic content, such as modals for different process types and interactive visualizations, rather than a static, predefined layout.
 
-The new UI should be an intelligent and dynamic container for this logic, not just a static webpage.
+The new UI should be an intelligent and dynamic container for this logic, not just a static webpage, but more like a perfect and clear one.
 
 ---
 
