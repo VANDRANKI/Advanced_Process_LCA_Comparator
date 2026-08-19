@@ -88,8 +88,15 @@ const normalizeImpactDb = (db) => {
   return norm
 }
 
+const cloneDefaults = () => JSON.parse(JSON.stringify(DEFAULT_IMPACT_DB))
+
 export const useImpactDatabase = () => {
-  const [impactDb, setImpactDb] = useState(DEFAULT_IMPACT_DB)
+  // Clone rather than seeding state with the module-level object itself.
+  // DEFAULT_IMPACT_DB is the reset target, so if a consumer ever mutates the
+  // state in place it would rewrite the defaults for the rest of the session
+  // and resetImpactDb() would restore the corrupted values. The rest of this
+  // file already deep-copies for the same reason.
+  const [impactDb, setImpactDb] = useState(cloneDefaults)
 
   // Load saved impact database on mount
   useEffect(() => {
@@ -97,6 +104,15 @@ export const useImpactDatabase = () => {
       const raw = localStorage.getItem(IMPACT_DB_KEY)
       if (raw) {
         const saved = normalizeImpactDb(JSON.parse(raw))
+        // Saved entries win by name, then any default not already present is
+        // appended so a version that ships new reference data still surfaces it.
+        //
+        // Known limitation: this cannot tell "the user deleted this default"
+        // from "this default is new since the last save", so a deleted default
+        // reappears on reload. Nothing deletes entries today (updateImpactDb
+        // and saveImpactDb are not wired to any UI yet), but whoever adds that
+        // screen needs to persist the removed names alongside the database and
+        // skip them here, otherwise deletions will not stick.
         const mergeByName = (primary, fallback) => {
           const seen = new Set()
           const result = []
@@ -123,7 +139,7 @@ export const useImpactDatabase = () => {
       }
     } catch (error) {
       console.error('Error loading impact database:', error)
-      setImpactDb(JSON.parse(JSON.stringify(DEFAULT_IMPACT_DB)))
+      setImpactDb(cloneDefaults())
     }
   }, [])
 
@@ -131,13 +147,28 @@ export const useImpactDatabase = () => {
     setImpactDb(newDb)
   }
 
+  // localStorage throws rather than returning a status: QuotaExceededError when
+  // the origin is full, and SecurityError when storage is blocked entirely, as
+  // in Safari private browsing. The read above is already guarded; leaving the
+  // writes bare would surface those as unhandled errors inside a click handler
+  // and lose the in-memory state with it.
   const resetImpactDb = () => {
-    localStorage.removeItem(IMPACT_DB_KEY)
-    setImpactDb(JSON.parse(JSON.stringify(DEFAULT_IMPACT_DB)))
+    try {
+      localStorage.removeItem(IMPACT_DB_KEY)
+    } catch (error) {
+      console.error('Error clearing saved impact database:', error)
+    }
+    setImpactDb(cloneDefaults())
   }
 
   const saveImpactDb = () => {
-    localStorage.setItem(IMPACT_DB_KEY, JSON.stringify(impactDb))
+    try {
+      localStorage.setItem(IMPACT_DB_KEY, JSON.stringify(impactDb))
+      return true
+    } catch (error) {
+      console.error('Error saving impact database:', error)
+      return false
+    }
   }
 
   return {
