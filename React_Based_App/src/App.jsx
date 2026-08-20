@@ -114,7 +114,13 @@ function App() {
   const addProcess = (processData) => {
     const outputs = calculateProcessOutputs(processData);
     const newProcess = {
-      id: Date.now(),
+      // crypto.randomUUID(), not Date.now(): id is used for the React key,
+      // for delete (processes.filter(p => p.id !== id)) and for edit
+      // (processes.map(p => p.id === editingProcess.id ? updated : p)).
+      // Date.now() has 1ms resolution, so two processes added in the same
+      // millisecond collided, and editing or deleting either one then acted
+      // on both, since a filter/map by id matches every row that shares it.
+      id: crypto.randomUUID(),
       ...processData,
       outputs,
       createdAt: new Date().toISOString(),
