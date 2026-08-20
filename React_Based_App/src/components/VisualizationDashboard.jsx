@@ -175,16 +175,30 @@ const ProcessComparison = ({ processes, sunburstMetric }) => {
       }
 
       // Materials
+      // Each material's share of emissionsMaterials is weighted by its own
+      // amount, not split evenly across however many materials the process
+      // has. An even split showed 1kg of one chemical and 99kg of another as
+      // equal contributors on the diagram whose entire purpose is to show
+      // which source dominates. This component only receives {name, amount}
+      // per material (no per-unit emission factor, that lookup happens in
+      // App.jsx against impactDb), so amount-weighting is the best split
+      // available here; it is still exact when a process has one material.
       if (process.materials) {
+        const totalMaterialAmount = process.materials.reduce(
+          (sum, m) => sum + (Number(m.amount) || 0),
+          0
+        );
         process.materials.forEach((material) => {
           if (material.amount > 0) {
             const sourceName = `${material.name} (Material)`;
             if (!nodes.find((n) => n.name === sourceName)) {
               nodes.push({ name: sourceName });
             }
-            const contribution =
-              (outputs.emissionsMaterials || 0) /
-              (process.materials.length || 1);
+            const share =
+              totalMaterialAmount > 0
+                ? (Number(material.amount) || 0) / totalMaterialAmount
+                : 1 / process.materials.length;
+            const contribution = (outputs.emissionsMaterials || 0) * share;
             if (contribution > 0) {
               links.push({
                 source: sourceName,
@@ -196,16 +210,23 @@ const ProcessComparison = ({ processes, sunburstMetric }) => {
         });
       }
 
-      // Water
+      // Water (same amount-weighting, by volumeL instead of amount)
       if (process.waters) {
+        const totalWaterVolume = process.waters.reduce(
+          (sum, w) => sum + (Number(w.volumeL) || 0),
+          0
+        );
         process.waters.forEach((water) => {
           if (water.volumeL > 0) {
             const sourceName = `${water.name} (Water)`;
             if (!nodes.find((n) => n.name === sourceName)) {
               nodes.push({ name: sourceName });
             }
-            const contribution =
-              (outputs.emissionsWater || 0) / (process.waters.length || 1);
+            const share =
+              totalWaterVolume > 0
+                ? (Number(water.volumeL) || 0) / totalWaterVolume
+                : 1 / process.waters.length;
+            const contribution = (outputs.emissionsWater || 0) * share;
             if (contribution > 0) {
               links.push({
                 source: sourceName,
