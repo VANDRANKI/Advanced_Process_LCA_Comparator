@@ -36,20 +36,6 @@ const ProcessModal = ({
     }
   }, [editingProcess])
 
-  // Update parameters when process type changes
-  useEffect(() => {
-    if (processType && processCatalog[processType]) {
-      const spec = processCatalog[processType]
-      const newParams = {}
-      
-      spec.inputs.forEach(input => {
-        newParams[input.name] = input.defaultValue ?? spec.defaults[input.name] ?? ''
-      })
-      
-      setParameters(newParams)
-    }
-  }, [processType, processCatalog])
-
   // Recalculate outputs when form data changes
   useEffect(() => {
     if (processType) {
@@ -70,6 +56,30 @@ const ProcessModal = ({
       ...prev,
       [paramName]: value
     }))
+  }
+
+  // Resetting parameters to the new type's catalog defaults belongs here, on
+  // the user's own selection, not in a useEffect keyed on processType.
+  //
+  // That used to be a separate effect with deps [processType, processCatalog].
+  // Opening Edit on an existing process sets processType via the "initialize
+  // form when editing" effect above, which is *also* a processType change, so
+  // the reset effect fired right after it and overwrote the just-restored
+  // saved parameters with the catalog defaults before the user ever saw them.
+  // A saved temperatureC of 950 was silently shown, and would be silently
+  // saved, as the catalog default of 800 the moment the modal opened.
+  // Doing the reset here means it only ever runs on a genuine user-driven
+  // type change, never as a side effect of loading an existing process.
+  const handleProcessTypeChange = (newType) => {
+    setProcessType(newType)
+    if (newType && processCatalog[newType]) {
+      const spec = processCatalog[newType]
+      const newParams = {}
+      spec.inputs.forEach(input => {
+        newParams[input.name] = input.defaultValue ?? spec.defaults[input.name] ?? ''
+      })
+      setParameters(newParams)
+    }
   }
 
   const addMaterial = () => {
@@ -148,7 +158,7 @@ const ProcessModal = ({
               </label>
               <select
                 value={processType}
-                onChange={(e) => setProcessType(e.target.value)}
+                onChange={(e) => handleProcessTypeChange(e.target.value)}
                 className="w-full bg-app-panel border border-app-border rounded-lg px-3 py-2 text-app-text focus:ring-2 focus:ring-app-primary focus:border-transparent"
               >
                 <option value="">Select a process type</option>
