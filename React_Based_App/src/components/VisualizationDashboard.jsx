@@ -1,6 +1,16 @@
 import React, { useEffect, useRef } from "react";
 import * as echarts from "echarts";
 
+// One sunburst chart per metric (each comparing all selected processes as
+// children), not one per process. Declared outside the component so both
+// the ref-array sizing and the JSX below share the exact same length as
+// renderSunburstCharts()'s indexing -- see the note on sunburstRefs.
+const SUNBURST_METRICS = [
+  { key: "energy", label: "Energy", color: "#4F81BD" }, // Blue
+  { key: "emissions", label: "Emissions", color: "#E46C0A" }, // Orange
+  { key: "water", label: "Water", color: "#4BACC6" }, // Teal
+];
+
 const ProcessComparison = ({ processes, sunburstMetric }) => {
   const chartRefs = {
     totals: useRef(null),
@@ -9,9 +19,16 @@ const ProcessComparison = ({ processes, sunburstMetric }) => {
     sankey: useRef(null), // 🔹 Added Sankey chart ref
   };
 
-  // Sunburst refs array
+  // Sunburst refs array: one ref per METRIC (energy/emissions/water), not
+  // one per process. renderSunburstCharts() below always indexes this by
+  // metric (mIndex 0..2), so sizing it to processes.length only happened to
+  // work when exactly 3 processes were being compared -- with any other
+  // count, either a metric silently never got a chart (fewer than 3
+  // processes, e.g. the Water Comparison sunburst never rendering with only
+  // 2 processes selected) or extra chart panels were created and never
+  // filled in (more than 3 processes, leaving visibly blank panels).
   const sunburstRefs = useRef([]);
-  sunburstRefs.current = processes.map(
+  sunburstRefs.current = SUNBURST_METRICS.map(
     (_, i) => sunburstRefs.current[i] ?? React.createRef()
   );
 
@@ -260,11 +277,7 @@ const ProcessComparison = ({ processes, sunburstMetric }) => {
   };
 
   const renderSunburstCharts = () => {
-    const metrics = [
-      { key: "energy", label: "Energy", color: "#4F81BD" }, // Blue
-      { key: "emissions", label: "Emissions", color: "#E46C0A" }, // Orange
-      { key: "water", label: "Water", color: "#4BACC6" }, // Teal
-    ];
+    const metrics = SUNBURST_METRICS;
 
     const palettes = [
       "#4F81BD",
@@ -358,10 +371,11 @@ const ProcessComparison = ({ processes, sunburstMetric }) => {
         <div ref={chartRefs.sankey} className="w-full h-96"></div>
       </div>
 
-      {/* Sunburst Charts */}
-      {processes.map((_, index) => (
+      {/* Sunburst Charts: one per metric (energy/emissions/water), each
+          comparing all selected processes -- see SUNBURST_METRICS above. */}
+      {SUNBURST_METRICS.map((metric, index) => (
         <div
-          key={index}
+          key={metric.key}
           className="bg-app-panel/30 border border-app-border rounded-lg p-4"
         >
           <div ref={sunburstRefs.current[index]} className="w-full h-80"></div>
