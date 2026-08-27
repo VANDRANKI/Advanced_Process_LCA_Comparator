@@ -40,6 +40,37 @@ const ProcessComparison = ({ processes, sunburstMetric }) => {
     renderSunburstCharts();
   }, [processes, sunburstMetric]);
 
+  // Display names with numeric suffixes for duplicate process labels, e.g.
+  // "Milling 1", "Milling 2". Needed for more than just readability: the
+  // Sankey chart below keys its nodes by this same name, and echarts' Graph
+  // indexes Sankey nodes by name (node_modules/echarts/lib/data/Graph.js,
+  // addNode/addEdge). Two processes left with the same default label (no
+  // customLabel set, same processType) fed the same string as two separate
+  // node names; echarts silently drops the second node ("Graph nodes have
+  // duplicate name or id") and reattaches its emissions edge to the first
+  // process's node, merging two distinct processes' flows into one diagram
+  // node. Verified against echarts' own Graph implementation: addNode() logs
+  // and no-ops on the repeat name, and addEdge() resolves the edge's target
+  // through the same nodesMap, landing both processes' edges on one node.
+  // Applied here (not just in renderSankeyChart) so the bar/heatmap/sunburst
+  // labels stay consistent with the names the Sankey diagram actually uses.
+  const getUniqueProcessNames = () => {
+    const count = {};
+    processes.forEach((p) => {
+      const n = p.customLabel || p.processType;
+      count[n] = (count[n] || 0) + 1;
+    });
+    const seen = {};
+    return processes.map((p) => {
+      const n = p.customLabel || p.processType;
+      if (count[n] > 1) {
+        seen[n] = (seen[n] || 0) + 1;
+        return `${n} ${seen[n]}`;
+      }
+      return n;
+    });
+  };
+
   const renderBarChart = () => {
     const chart = echarts.init(chartRefs.totals.current, "dark");
     const option = {
@@ -75,7 +106,7 @@ const ProcessComparison = ({ processes, sunburstMetric }) => {
       },
       xAxis: {
         type: "category",
-        data: processes.map((p) => p.customLabel || p.processType),
+        data: getUniqueProcessNames(),
         axisLabel: { color: "#e8eeff" },
         itemStyle: { color: "#ff6a7d" },
         axisLine: { lineStyle: { color: "#223153" } },
@@ -137,7 +168,7 @@ const ProcessComparison = ({ processes, sunburstMetric }) => {
       },
       yAxis: {
         type: "category",
-        data: processes.map((p) => p.customLabel || p.processType),
+        data: getUniqueProcessNames(),
         splitArea: { show: true },
         axisLabel: { color: "#e8eeff" },
       },
@@ -171,9 +202,13 @@ const ProcessComparison = ({ processes, sunburstMetric }) => {
 
     const nodes = [];
     const links = [];
+    const uniqueNames = getUniqueProcessNames();
 
-    processes.forEach((process) => {
-      const processName = process.customLabel || process.processType;
+    processes.forEach((process, index) => {
+      // Use the de-duplicated name, not the raw customLabel/processType, as
+      // the Sankey node id -- see getUniqueProcessNames() for why two
+      // processes sharing a label would otherwise collapse onto one node.
+      const processName = uniqueNames[index];
       nodes.push({ name: processName });
 
       const outputs = process.outputs || {};
@@ -296,12 +331,13 @@ const ProcessComparison = ({ processes, sunburstMetric }) => {
       if (chart) chart.dispose();
       chart = echarts.init(chartRef.current, "dark");
 
+      const uniqueNames = getUniqueProcessNames();
       const children = processes
         .map((process, idx) => {
           const value = process.outputs?.[metric.key] ?? 0;
           return value > 0
             ? {
-                name: process.customLabel || process.processType,
+                name: uniqueNames[idx],
                 value,
                 itemStyle: { color: palettes[idx % palettes.length] },
               }
