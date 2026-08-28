@@ -40,6 +40,28 @@ function App() {
     }
   }, [impactDb.electricity, selectedElectricityDataset]);
 
+  // Persist electricity dataset selection so the restore-on-mount effect
+  // above actually has something to find. The read half of this ported
+  // over from the original vanilla-JS app (app.js line 405: `saved =
+  // localStorage.getItem('selectedElectricityDataset')`), but the write
+  // half (app.js line 411: `elecSelect.onchange = () => {
+  // localStorage.setItem('selectedElectricityDataset', elecSelect.value) }`)
+  // was dropped during the React port -- nothing in this app ever calls
+  // setItem for this key. So `saved` was always null, the effect above
+  // always fell through to `impactDb.electricity[0].name`, and picking a
+  // non-default dataset in the dropdown was silently forgotten on reload.
+  // Guarded like the other localStorage writes in this app (useImpactDatabase),
+  // since setItem throws (QuotaExceededError / SecurityError in private
+  // browsing) rather than failing silently.
+  useEffect(() => {
+    if (!selectedElectricityDataset) return;
+    try {
+      localStorage.setItem("selectedElectricityDataset", selectedElectricityDataset);
+    } catch (error) {
+      console.error("Error saving selected electricity dataset:", error);
+    }
+  }, [selectedElectricityDataset]);
+
   // Process calculation function
   const calculateProcessOutputs = (processData) => {
     const spec = processCatalog[processData.processType];
