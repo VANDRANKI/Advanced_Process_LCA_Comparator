@@ -186,6 +186,15 @@ function App() {
   };
 
   // Save scenario
+  //
+  // localStorage.setItem throws rather than returning a status --
+  // QuotaExceededError when the origin's storage is full, SecurityError
+  // when storage is blocked entirely (e.g. Safari private browsing) -- so
+  // an unguarded call here meant clicking "Save" in either of those cases
+  // threw inside the click handler, never reached the success alert, and
+  // gave the user no feedback at all about why nothing happened. Guarded
+  // like the other localStorage writes in this app (useImpactDatabase,
+  // the electricity-dataset-selection effect above).
   const saveScenario = () => {
     const scenario = {
       processes,
@@ -193,8 +202,13 @@ function App() {
       selectedElectricityDataset,
       timestamp: new Date().toISOString(),
     };
-    localStorage.setItem("lcaScenario", JSON.stringify(scenario));
-    alert("Scenario saved successfully!");
+    try {
+      localStorage.setItem("lcaScenario", JSON.stringify(scenario));
+      alert("Scenario saved successfully!");
+    } catch (error) {
+      console.error("Error saving scenario:", error);
+      alert("Could not save scenario: browser storage is full or unavailable.");
+    }
   };
 
   // Reset all
