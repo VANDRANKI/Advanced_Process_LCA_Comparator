@@ -87,8 +87,13 @@ const ProcessComparison = ({ processes, sunburstMetric }) => {
       legend: {
         top: 44,
         left: "center",
-        itemwidth: 14,
-        itemheight: 8,
+        // ECharts' legend option reads itemWidth/itemHeight (camelCase).
+        // The lowercase itemwidth/itemheight below are not a recognized
+        // option key, so ECharts silently ignored them and fell back to
+        // its defaults (25x14) instead of the intended compact 14x8
+        // markers.
+        itemWidth: 14,
+        itemHeight: 8,
         itemGap: 16,
         textStyle: { color: "#e8eeff" },
         data: [
