@@ -99,7 +99,7 @@ const ProcessComparison = ({ processes, sunburstMetric }) => {
         data: [
           "Energy (kWh)",
           "Water (kg)",
-          `Emissions (kg CO₂e - ${sunburstMetric})`,
+          "Emissions (kg CO₂e)",
         ],
       },
       grid: {
@@ -136,9 +136,16 @@ const ProcessComparison = ({ processes, sunburstMetric }) => {
           itemStyle: { color: "#2cd498" },
         },
         {
-          name: `Emissions (kg CO₂e - ${sunburstMetric})`,
+          // This series always shows actual emissions (outputs.emissions),
+          // not whichever metric sunburstMetric happens to hold. It used to
+          // read p.outputs?.[sunburstMetric], and since sunburstMetric is
+          // initialized to "energy" in App.jsx with no control anywhere in
+          // this app that ever calls setSunburstMetric, this series always
+          // plotted the same values as the Energy series above it while
+          // still being labeled "Emissions (kg CO₂e - energy)".
+          name: "Emissions (kg CO₂e)",
           type: "bar",
-          data: processes.map((p) => p.outputs?.[sunburstMetric] || 0),
+          data: processes.map((p) => p.outputs?.emissions || 0),
           itemStyle: { color: "#ff6a7d" },
         },
       ],
@@ -220,7 +227,11 @@ const ProcessComparison = ({ processes, sunburstMetric }) => {
 
       // Energy
       if (outputs.emissionsEnergy > 0) {
-        const sourceName = `Grid Electricity (${sunburstMetric})`;
+        // Static label: the flows below are always outputs.emissionsEnergy
+        // (kg CO2e), never anything selected by sunburstMetric, so
+        // interpolating it here just appended the word "energy" to every
+        // node regardless of what the diagram is actually showing.
+        const sourceName = "Grid Electricity";
         if (!nodes.find((n) => n.name === sourceName)) {
           nodes.push({ name: sourceName });
         }
@@ -298,7 +309,9 @@ const ProcessComparison = ({ processes, sunburstMetric }) => {
 
     const option = {
       title: {
-        text: `Emissions Flow Diagram (${sunburstMetric})`,
+        // Static: same reasoning as the "Grid Electricity" node name above,
+        // this diagram's data never varies with sunburstMetric.
+        text: "Emissions Flow Diagram",
         left: "center",
         textStyle: { color: "#e8eeff" },
       },
