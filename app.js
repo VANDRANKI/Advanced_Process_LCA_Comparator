@@ -862,14 +862,23 @@ function renderVisualizations() {
       darkMode: true,
       tooltip: { trigger: 'axis' },
       legend: { data: [processes.A.name, processes.B.name, `Emissions — Energy (${document.getElementById('impactIndicator')?.value || 'GWP'})`, 'Emissions — Materials', 'Emissions — Water'] },
-      xAxis: { type: 'category', data: ['Energy (kWh)', 'Water (kg)', 'Emissions (kg CO₂e)'] },
+      // Emissions gets its own category per process (not one combined
+      // "Emissions" column) so the breakdown stack below matches the A vs B
+      // side-by-side comparison used everywhere else in this function and in
+      // the summary table (see totalsA.emissions / totalsB.emissions above).
+      // A combined column previously summed totalsA and totalsB into one
+      // bar while the legend still listed both process names against it.
+      xAxis: { type: 'category', data: ['Energy (kWh)', 'Water (kg)', `${processes.A.name} Emissions (kg CO₂e)`, `${processes.B.name} Emissions (kg CO₂e)`] },
       yAxis: { type: 'value' },
       series: [
-        { name: processes.A.name, type: 'bar', stack: 'totals', data: [format(totalsA.energy), format(totalsA.water), 0], itemStyle: { opacity: 0.9 } },
-        { name: processes.B.name, type: 'bar', stack: 'totals', data: [format(totalsB.energy), format(totalsB.water), 0], itemStyle: { opacity: 0.9 } },
-        { name: `Emissions — Energy (${document.getElementById('impactIndicator')?.value || 'GWP'})`, type: 'bar', stack: 'A-emi', data: [0, 0, format(totalsA.emissionsEnergy + totalsB.emissionsEnergy)], itemStyle: { color: '#6aa6ff' } },
-        { name: 'Emissions — Materials', type: 'bar', stack: 'A-emi', data: [0, 0, format(totalsA.emissionsMaterials + totalsB.emissionsMaterials)], itemStyle: { color: '#2cd498' } },
-        { name: 'Emissions — Water', type: 'bar', stack: 'A-emi', data: [0, 0, format(totalsA.emissionsWater + totalsB.emissionsWater)], itemStyle: { color: '#ff6a7d' } }
+        { name: processes.A.name, type: 'bar', stack: 'totals', data: [format(totalsA.energy), format(totalsA.water), 0, 0], itemStyle: { opacity: 0.9 } },
+        { name: processes.B.name, type: 'bar', stack: 'totals', data: [format(totalsB.energy), format(totalsB.water), 0, 0], itemStyle: { opacity: 0.9 } },
+        { name: `Emissions — Energy (${document.getElementById('impactIndicator')?.value || 'GWP'})`, type: 'bar', stack: 'A-emi', data: [0, 0, format(totalsA.emissionsEnergy), 0], itemStyle: { color: '#6aa6ff' } },
+        { name: 'Emissions — Materials', type: 'bar', stack: 'A-emi', data: [0, 0, format(totalsA.emissionsMaterials), 0], itemStyle: { color: '#2cd498' } },
+        { name: 'Emissions — Water', type: 'bar', stack: 'A-emi', data: [0, 0, format(totalsA.emissionsWater), 0], itemStyle: { color: '#ff6a7d' } },
+        { name: `Emissions — Energy (${document.getElementById('impactIndicator')?.value || 'GWP'})`, type: 'bar', stack: 'B-emi', data: [0, 0, 0, format(totalsB.emissionsEnergy)], itemStyle: { color: '#6aa6ff' } },
+        { name: 'Emissions — Materials', type: 'bar', stack: 'B-emi', data: [0, 0, 0, format(totalsB.emissionsMaterials)], itemStyle: { color: '#2cd498' } },
+        { name: 'Emissions — Water', type: 'bar', stack: 'B-emi', data: [0, 0, 0, format(totalsB.emissionsWater)], itemStyle: { color: '#ff6a7d' } }
       ]
     });
     window.addEventListener('resize', () => chart.resize());
