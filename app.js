@@ -796,6 +796,13 @@ function resetAll() {
   document.getElementById('comparisonResults').style.display = 'none';
 }
 
+function recomputeAllSteps() {
+  document.querySelectorAll('.process-steps .step').forEach(step => {
+    const procSel = step.querySelector('.process-select');
+    if (procSel && procSel.value) computeStepOutputs(step, procSel.value);
+  });
+}
+
 // Initialize minimal UI
 window.onload = async () => {
   // Start with one empty step per side
@@ -808,11 +815,21 @@ window.onload = async () => {
   const impactSel = document.getElementById('impactIndicator');
   if (impactSel) impactSel.addEventListener('change', () => {
     // Recompute all steps to update emissions for selected indicator
-    document.querySelectorAll('.process-steps .step').forEach(step => {
-      const procSel = step.querySelector('.process-select');
-      if (procSel && procSel.value) computeStepOutputs(step, procSel.value);
-    });
+    recomputeAllSteps();
     renderVisualizations();
+  });
+  // Calcination/Hydrothermal/Drying/Annealing all derive their energy from
+  // (temperatureC - ambientC). Nothing previously recomputed existing steps
+  // when this field changed, so editing the ambient temperature had no
+  // visible effect on Energy/Water/Emissions until some unrelated input
+  // (a step parameter, the electricity dataset, the impact indicator)
+  // happened to trigger a recompute afterward.
+  const ambientInput = document.getElementById('ambientTemp');
+  if (ambientInput) ambientInput.addEventListener('input', () => {
+    recomputeAllSteps();
+    if (document.getElementById('comparisonResults').style.display === 'block') {
+      renderVisualizations();
+    }
   });
 };
 
