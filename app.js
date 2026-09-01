@@ -277,6 +277,15 @@ function saveImpactDb() {
   localStorage.setItem(IMPACT_DB_KEY, JSON.stringify(impactDb));
   renderImpactDbTables();
 }
+// Persist without rebuilding the tables. renderImpactDbTables() replaces
+// every input in the Impact Factors panel with a brand-new DOM node on
+// every call, which drops focus mid-edit. saveImpactDb() (full rebuild) is
+// still correct after structural changes (row add/delete, dataset restore),
+// but a keystroke inside a single field only needs the value persisted, not
+// the whole panel torn down and rebuilt around the user's cursor.
+function persistImpactDb() {
+  localStorage.setItem(IMPACT_DB_KEY, JSON.stringify(impactDb));
+}
 async function resetImpactDb() {
   localStorage.removeItem(IMPACT_DB_KEY);
   impactDb = JSON.parse(JSON.stringify(DEFAULT_IMPACT_DB));
@@ -315,12 +324,12 @@ function renderImpactDbTables() {
         <button class="danger" type="button">✕</button>
       `;
       const [nameInput, gwpInput, adpInput, waterInput, apInput, fetpInput, delBtn] = row.querySelectorAll('input,button');
-      nameInput.addEventListener('input', () => { impactDb.chemicals[idx].name = nameInput.value; saveImpactDb(); });
-      gwpInput.addEventListener('input', () => { impactDb.chemicals[idx].GWP = Number(gwpInput.value) || 0; saveImpactDb(); });
-      adpInput.addEventListener('input', () => { impactDb.chemicals[idx].ADP = Number(adpInput.value) || 0; saveImpactDb(); });
-      waterInput.addEventListener('input', () => { impactDb.chemicals[idx].WaterUse = Number(waterInput.value) || 0; saveImpactDb(); });
-      apInput.addEventListener('input', () => { impactDb.chemicals[idx].AP = Number(apInput.value) || 0; saveImpactDb(); });
-      fetpInput.addEventListener('input', () => { impactDb.chemicals[idx].FETP = Number(fetpInput.value) || 0; saveImpactDb(); });
+      nameInput.addEventListener('input', () => { impactDb.chemicals[idx].name = nameInput.value; persistImpactDb(); });
+      gwpInput.addEventListener('input', () => { impactDb.chemicals[idx].GWP = Number(gwpInput.value) || 0; persistImpactDb(); });
+      adpInput.addEventListener('input', () => { impactDb.chemicals[idx].ADP = Number(adpInput.value) || 0; persistImpactDb(); });
+      waterInput.addEventListener('input', () => { impactDb.chemicals[idx].WaterUse = Number(waterInput.value) || 0; persistImpactDb(); });
+      apInput.addEventListener('input', () => { impactDb.chemicals[idx].AP = Number(apInput.value) || 0; persistImpactDb(); });
+      fetpInput.addEventListener('input', () => { impactDb.chemicals[idx].FETP = Number(fetpInput.value) || 0; persistImpactDb(); });
       delBtn.addEventListener('click', () => { impactDb.chemicals.splice(idx, 1); saveImpactDb(); renderImpactDbTables(); });
       chemTable.appendChild(row);
     });
@@ -352,12 +361,12 @@ function renderImpactDbTables() {
         <button class="danger" type="button">✕</button>
       `;
       const [nameInput, gwpInput, adpInput, waterInput, apInput, fetpInput, delBtn] = row.querySelectorAll('input,button');
-      nameInput.addEventListener('input', () => { impactDb.waters[idx].name = nameInput.value; saveImpactDb(); });
-      gwpInput.addEventListener('input', () => { impactDb.waters[idx].GWP = Number(gwpInput.value) || 0; saveImpactDb(); });
-      adpInput.addEventListener('input', () => { impactDb.waters[idx].ADP = Number(adpInput.value) || 0; saveImpactDb(); });
-      waterInput.addEventListener('input', () => { impactDb.waters[idx].WaterUse = Number(waterInput.value) || 0; saveImpactDb(); });
-      apInput.addEventListener('input', () => { impactDb.waters[idx].AP = Number(apInput.value) || 0; saveImpactDb(); });
-      fetpInput.addEventListener('input', () => { impactDb.waters[idx].FETP = Number(fetpInput.value) || 0; saveImpactDb(); });
+      nameInput.addEventListener('input', () => { impactDb.waters[idx].name = nameInput.value; persistImpactDb(); });
+      gwpInput.addEventListener('input', () => { impactDb.waters[idx].GWP = Number(gwpInput.value) || 0; persistImpactDb(); });
+      adpInput.addEventListener('input', () => { impactDb.waters[idx].ADP = Number(adpInput.value) || 0; persistImpactDb(); });
+      waterInput.addEventListener('input', () => { impactDb.waters[idx].WaterUse = Number(waterInput.value) || 0; persistImpactDb(); });
+      apInput.addEventListener('input', () => { impactDb.waters[idx].AP = Number(apInput.value) || 0; persistImpactDb(); });
+      fetpInput.addEventListener('input', () => { impactDb.waters[idx].FETP = Number(fetpInput.value) || 0; persistImpactDb(); });
       delBtn.addEventListener('click', () => { impactDb.waters.splice(idx, 1); saveImpactDb(); renderImpactDbTables(); });
       watersTable.appendChild(row);
     });
@@ -389,12 +398,12 @@ function renderImpactDbTables() {
         <button class="danger" type="button">✕</button>
       `;
       const [nameInput, gwpInput, adpInput, waterInput, apInput, fetpInput, delBtn] = row.querySelectorAll('input,button');
-      nameInput.addEventListener('input', () => { impactDb.electricity[idx].name = nameInput.value; saveImpactDb(); });
-      gwpInput.addEventListener('input', () => { impactDb.electricity[idx].GWP = Number(gwpInput.value) || 0; saveImpactDb(); });
-      adpInput.addEventListener('input', () => { impactDb.electricity[idx].ADP = Number(adpInput.value) || 0; saveImpactDb(); });
-      waterInput.addEventListener('input', () => { impactDb.electricity[idx].WaterUse = Number(waterInput.value) || 0; saveImpactDb(); });
-      apInput.addEventListener('input', () => { impactDb.electricity[idx].AP = Number(apInput.value) || 0; saveImpactDb(); });
-      fetpInput.addEventListener('input', () => { impactDb.electricity[idx].FETP = Number(fetpInput.value) || 0; saveImpactDb(); });
+      nameInput.addEventListener('input', () => { impactDb.electricity[idx].name = nameInput.value; persistImpactDb(); });
+      gwpInput.addEventListener('input', () => { impactDb.electricity[idx].GWP = Number(gwpInput.value) || 0; persistImpactDb(); });
+      adpInput.addEventListener('input', () => { impactDb.electricity[idx].ADP = Number(adpInput.value) || 0; persistImpactDb(); });
+      waterInput.addEventListener('input', () => { impactDb.electricity[idx].WaterUse = Number(waterInput.value) || 0; persistImpactDb(); });
+      apInput.addEventListener('input', () => { impactDb.electricity[idx].AP = Number(apInput.value) || 0; persistImpactDb(); });
+      fetpInput.addEventListener('input', () => { impactDb.electricity[idx].FETP = Number(fetpInput.value) || 0; persistImpactDb(); });
       delBtn.addEventListener('click', () => { impactDb.electricity.splice(idx, 1); saveImpactDb(); renderImpactDbTables(); });
       elecTable.appendChild(row);
     });
