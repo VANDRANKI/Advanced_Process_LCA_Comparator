@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 
 const ProcessModal = ({ 
   isOpen, 
@@ -49,7 +49,7 @@ const ProcessModal = ({
       const newOutputs = calculateOutputs(processData)
       setOutputs(newOutputs)
     }
-  }, [processType, parameters, materials, waters, calculateOutputs])
+  }, [processType, customLabel, parameters, materials, waters, calculateOutputs])
 
   const handleParameterChange = (paramName, value) => {
     setParameters(prev => ({

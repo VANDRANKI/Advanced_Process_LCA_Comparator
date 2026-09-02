@@ -1,4 +1,3 @@
-import React from "react";
 import { ChevronDown } from "lucide-react";
 
 const EnvironmentSettings = ({
@@ -98,7 +97,7 @@ const EnvironmentSettings = ({
       </div> */}
 
       {/* Custom Thumb Styling */}
-      <style jsx>{`
+      <style>{`
         input[type="range"]::-webkit-slider-thumb {
           appearance: none;
           width: 24px;

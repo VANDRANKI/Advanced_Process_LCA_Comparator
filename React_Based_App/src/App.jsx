@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Header from "./components/Header";
 import EnvironmentSettings from "./components/EnvironmentSettings";
 import ProcessManager from "./components/ProcessManager";
@@ -8,8 +8,10 @@ import { useImpactDatabase } from "./hooks/useImpactDatabase";
 import { processCatalog } from "./utils/processCatalog";
 
 function App() {
-  const { impactDb, updateImpactDb, resetImpactDb, saveImpactDb } =
-    useImpactDatabase();
+  // updateImpactDb/resetImpactDb/saveImpactDb are not pulled in here because
+  // they are not wired to any UI yet (see useImpactDatabase.js) - only
+  // impactDb itself is read below.
+  const { impactDb } = useImpactDatabase();
 
   // Environment settings
   const [ambientTemp, setAmbientTemp] = useState(25);

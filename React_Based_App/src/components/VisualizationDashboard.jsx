@@ -32,12 +32,19 @@ const ProcessComparison = ({ processes, sunburstMetric }) => {
     (_, i) => sunburstRefs.current[i] ?? React.createRef()
   );
 
+  // renderBarChart/renderHeatmap/renderSankeyChart/renderSunburstCharts are
+  // plain functions declared in this component body, recreated on every
+  // render. Listing them here would make the effect re-run (and redraw every
+  // chart) on any unrelated re-render, not just when processes/sunburstMetric
+  // actually change, so they are deliberately left out rather than memoized
+  // with useCallback just to satisfy the rule.
   useEffect(() => {
     if (!processes?.length) return;
     renderBarChart();
     renderHeatmap();
     renderSankeyChart(); // 🔹 Call Sankey renderer
     renderSunburstCharts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [processes, sunburstMetric]);
 
   // Display names with numeric suffixes for duplicate process labels, e.g.

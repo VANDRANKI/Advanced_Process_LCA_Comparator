@@ -1,4 +1,3 @@
-import React from 'react'
 import ProcessCard from './ProcessCard'
 
 const ProcessManager = ({

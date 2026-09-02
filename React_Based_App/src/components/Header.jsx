@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import { useRef, useState } from "react";
 import labHero from "../../laboratory_experiment_image.jpg"; // If you prefer /public: use <img src="/laboratory_experiment_image.jpg" ...>
 import {
   FlaskConical, Beaker, TestTube, Atom, Microscope, Droplet,

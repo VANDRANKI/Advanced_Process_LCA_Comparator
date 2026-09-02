@@ -110,7 +110,7 @@ export const processCatalog = {
       { name: 'waterRemovedKg', label: 'Water removed (kg)', type: 'number', step: '0.1', placeholder: 'e.g., 0.2' },
     ],
     defaults: { temperatureC: 120, durationH: 3, waterRemovedKg: 0.2 },
-    energyKWh: ({ temperatureC, durationH, waterRemovedKg, ambientC }) => {
+    energyKWh: ({ temperatureC, waterRemovedKg, ambientC }) => {
       // Heat water from ambient to temp + latent heat. Cp_water 4.18 kJ/kgK; L_vap ~ 2257 kJ/kg.
       const cp = 4.18;
       const deltaT = Math.max(0, (Number(temperatureC) || 0) - (Number(ambientC) || 25));
