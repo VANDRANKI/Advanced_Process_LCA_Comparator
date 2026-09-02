@@ -1,0 +1,29 @@
+name: React app build and lint
+
+on:
+  push:
+    branches: [ "main" ]
+    paths: [ "React_Based_App/**" ]
+  pull_request:
+    branches: [ "main" ]
+    paths: [ "React_Based_App/**" ]
+
+defaults:
+  run:
+    working-directory: React_Based_App
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+      - name: Lint
+        run: yarn lint
+      - name: Build
+        run: yarn build
