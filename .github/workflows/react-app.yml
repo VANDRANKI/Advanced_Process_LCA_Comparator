@@ -8,6 +8,9 @@ on:
     branches: [ "main" ]
     paths: [ "React_Based_App/**" ]
 
+permissions:
+  contents: read
+
 defaults:
   run:
     working-directory: React_Based_App
