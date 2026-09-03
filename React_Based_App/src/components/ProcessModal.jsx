@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
-const ProcessModal = ({ 
-  isOpen, 
-  onClose, 
-  onSave, 
-  editingProcess, 
-  processCatalog, 
-  impactDb, 
-  calculateOutputs 
+const ProcessModal = ({
+  isOpen,
+  onClose,
+  onSave,
+  editingProcess,
+  processCatalog,
+  impactDb,
+  calculateOutputs
 }) => {
   const [processType, setProcessType] = useState('')
   const [customLabel, setCustomLabel] = useState('')
@@ -15,6 +15,64 @@ const ProcessModal = ({
   const [materials, setMaterials] = useState([])
   const [waters, setWaters] = useState([])
   const [outputs, setOutputs] = useState({ energy: 0, water: 0, emissions: 0 })
+
+  const dialogRef = useRef(null)
+  const previouslyFocusedRef = useRef(null)
+
+  // Keyboard accessibility: trap Tab within the dialog while open, close on
+  // Escape, and restore focus to whatever triggered the modal (the
+  // "Add Process" / "Edit" button) once it closes. Without this, a
+  // keyboard-only user can tab straight through the dialog into whatever
+  // sits behind the overlay, and loses their place entirely on close.
+  useEffect(() => {
+    if (!isOpen) return
+
+    previouslyFocusedRef.current = document.activeElement
+
+    const getFocusable = () =>
+      dialogRef.current
+        ? Array.from(
+            dialogRef.current.querySelectorAll(
+              'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            )
+          ).filter(el => !el.disabled)
+        : []
+
+    const focusable = getFocusable()
+    if (focusable.length > 0) {
+      focusable[0].focus()
+    } else {
+      dialogRef.current?.focus()
+    }
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose()
+        return
+      }
+      if (e.key !== 'Tab') return
+
+      const elements = getFocusable()
+      if (elements.length === 0) return
+
+      const first = elements[0]
+      const last = elements[elements.length - 1]
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      previouslyFocusedRef.current?.focus?.()
+    }
+  }, [isOpen, onClose])
 
   // Initialize form when editing
   useEffect(() => {
@@ -133,15 +191,23 @@ const ProcessModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-app-panel border border-app-border rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="process-modal-title"
+        tabIndex={-1}
+        className="bg-app-panel border border-app-border rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+      >
         <div className="p-6">
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-app-text">
+            <h2 id="process-modal-title" className="text-2xl font-bold text-app-text">
               {editingProcess ? 'Edit Process' : 'Add New Process'}
             </h2>
             <button
               onClick={onClose}
+              aria-label="Close"
               className="text-app-muted hover:text-app-text transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,10 +219,11 @@ const ProcessModal = ({
           {/* Process Selection */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
-              <label className="block text-sm font-medium text-app-muted mb-2">
+              <label htmlFor="process-type" className="block text-sm font-medium text-app-muted mb-2">
                 Process Type *
               </label>
               <select
+                id="process-type"
                 value={processType}
                 onChange={(e) => handleProcessTypeChange(e.target.value)}
                 className="w-full bg-app-panel border border-app-border rounded-lg px-3 py-2 text-app-text focus:ring-2 focus:ring-app-primary focus:border-transparent"
@@ -168,10 +235,11 @@ const ProcessModal = ({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-app-muted mb-2">
+              <label htmlFor="custom-label" className="block text-sm font-medium text-app-muted mb-2">
                 Custom Label
               </label>
               <input
+                id="custom-label"
                 type="text"
                 value={customLabel}
                 onChange={(e) => setCustomLabel(e.target.value)}
@@ -188,10 +256,11 @@ const ProcessModal = ({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {spec.inputs.map(input => (
                   <div key={input.name}>
-                    <label className="block text-sm font-medium text-app-muted mb-2">
+                    <label htmlFor={`param-${input.name}`} className="block text-sm font-medium text-app-muted mb-2">
                       {input.label}
                     </label>
                     <input
+                      id={`param-${input.name}`}
                       type={input.type}
                       step={input.step}
                       placeholder={input.placeholder}
@@ -220,10 +289,11 @@ const ProcessModal = ({
               {materials.map((material, index) => (
                 <div key={index} className="grid grid-cols-3 gap-3 items-end">
                   <div>
-                    <label className="block text-sm font-medium text-app-muted mb-2">
+                    <label htmlFor={`material-name-${index}`} className="block text-sm font-medium text-app-muted mb-2">
                       Chemical
                     </label>
                     <select
+                      id={`material-name-${index}`}
                       value={material.name}
                       onChange={(e) => updateMaterial(index, 'name', e.target.value)}
                       className="w-full bg-app-panel border border-app-border rounded-lg px-3 py-2 text-app-text focus:ring-2 focus:ring-app-primary focus:border-transparent"
@@ -235,10 +305,11 @@ const ProcessModal = ({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-app-muted mb-2">
+                    <label htmlFor={`material-amount-${index}`} className="block text-sm font-medium text-app-muted mb-2">
                       Amount (kg)
                     </label>
                     <input
+                      id={`material-amount-${index}`}
                       type="number"
                       step="0.01"
                       value={material.amount}
@@ -272,10 +343,11 @@ const ProcessModal = ({
               {waters.map((water, index) => (
                 <div key={index} className="grid grid-cols-3 gap-3 items-end">
                   <div>
-                    <label className="block text-sm font-medium text-app-muted mb-2">
+                    <label htmlFor={`water-name-${index}`} className="block text-sm font-medium text-app-muted mb-2">
                       Water Type
                     </label>
                     <select
+                      id={`water-name-${index}`}
                       value={water.name}
                       onChange={(e) => updateWater(index, 'name', e.target.value)}
                       className="w-full bg-app-panel border border-app-border rounded-lg px-3 py-2 text-app-text focus:ring-2 focus:ring-app-primary focus:border-transparent"
@@ -287,10 +359,11 @@ const ProcessModal = ({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-app-muted mb-2">
+                    <label htmlFor={`water-volume-${index}`} className="block text-sm font-medium text-app-muted mb-2">
                       Volume (L)
                     </label>
                     <input
+                      id={`water-volume-${index}`}
                       type="number"
                       step="0.01"
                       value={water.volumeL}

@@ -28,11 +28,12 @@ const EnvironmentSettings = ({
         <div className="mb-16 relative">
           {" "}
           {/* added more bottom margin */}
-          <label className="block text-2xl font-semibold text-gray-700 mb-4">
+          <label htmlFor="ambient-temp" className="block text-2xl font-semibold text-gray-700 mb-4">
             Ambient Temperature (°C)
           </label>
           <div className="relative">
             <input
+              id="ambient-temp"
               type="range"
               min="0"
               max="1000"
@@ -62,11 +63,12 @@ const EnvironmentSettings = ({
         <div className="mb-12 mt-12">
           {" "}
           {/* Increased gap with mb-12 and mt-12 */}
-          <label className="block text-2xl font-semibold text-gray-700 mb-4">
+          <label htmlFor="electricity-dataset" className="block text-2xl font-semibold text-gray-700 mb-4">
             Electricity Dataset
           </label>
           <div className="relative">
             <select
+              id="electricity-dataset"
               value={selectedElectricityDataset}
               onChange={handleElectricityDatasetChange}
               className="w-full bg-cyan-600 text-white text-lg font-medium py-4 px-6 rounded-2xl appearance-none cursor-pointer focus:outline-none focus:ring-4 focus:ring-cyan-300"
