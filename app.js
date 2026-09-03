@@ -286,6 +286,22 @@ function saveImpactDb() {
 function persistImpactDb() {
   localStorage.setItem(IMPACT_DB_KEY, JSON.stringify(impactDb));
 }
+
+// Chemical/water/electricity dataset names are free-text user input (typed in
+// the Impact Factors panel) that gets echoed back into innerHTML template
+// strings below, including inside `value="..."` attributes. Without escaping,
+// a name like `x" onmouseover="alert(1)` breaks out of the attribute and adds
+// a live event handler once innerHTML re-parses the string as HTML. Used at
+// every point where a name field round-trips through innerHTML.
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[ch]));
+}
 async function resetImpactDb() {
   localStorage.removeItem(IMPACT_DB_KEY);
   impactDb = JSON.parse(JSON.stringify(DEFAULT_IMPACT_DB));
@@ -315,7 +331,7 @@ function renderImpactDbTables() {
       const row = document.createElement('div');
       row.className = 'row';
       row.innerHTML = `
-        <input type="text" value="${c.name}" placeholder="Chemical name" />
+        <input type="text" value="${escapeHtml(c.name)}" placeholder="Chemical name" />
         <input type="number" step="0.0001" value="${c.GWP}" placeholder="GWP per kg" />
         <input type="number" step="0.0001" value="${c.ADP || 0}" placeholder="ADP" />
         <input type="number" step="0.0001" value="${c.WaterUse || 0}" placeholder="WaterUse" />
@@ -352,7 +368,7 @@ function renderImpactDbTables() {
       const row = document.createElement('div');
       row.className = 'row';
       row.innerHTML = `
-        <input type="text" value="${w.name}" placeholder="Water type" />
+        <input type="text" value="${escapeHtml(w.name)}" placeholder="Water type" />
         <input type="number" step="0.0001" value="${w.GWP}" placeholder="GWP per liter" />
         <input type="number" step="0.0001" value="${w.ADP || 0}" placeholder="ADP" />
         <input type="number" step="0.0001" value="${w.WaterUse || 1}" placeholder="WaterUse" />
@@ -389,7 +405,7 @@ function renderImpactDbTables() {
       const row = document.createElement('div');
       row.className = 'row';
       row.innerHTML = `
-        <input type="text" value="${e.name}" placeholder="Dataset name" />
+        <input type="text" value="${escapeHtml(e.name)}" placeholder="Dataset name" />
         <input type="number" step="0.0001" value="${e.GWP || 0}" placeholder="GWP per kWh" />
         <input type="number" step="0.0001" value="${e.ADP || 0}" placeholder="ADP" />
         <input type="number" step="0.0001" value="${e.WaterUse || 0}" placeholder="WaterUse" />
@@ -410,7 +426,7 @@ function renderImpactDbTables() {
   }
   if (elecSelect) {
     const elecs = Array.isArray(impactDb.electricity) ? impactDb.electricity : [];
-    elecSelect.innerHTML = elecs.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
+    elecSelect.innerHTML = elecs.map(e => `<option value="${escapeHtml(e.name)}">${escapeHtml(e.name)}</option>`).join('');
     const saved = localStorage.getItem('selectedElectricityDataset');
     if (saved && elecs.find(e => e.name === saved)) {
       elecSelect.value = saved;
@@ -511,8 +527,8 @@ function renderStepForm(stepEl, processName) {
   const rowsContainer = stepEl.querySelector('.materials-editor .rows');
   const rebuildOptions = () => {
     return {
-      chemicals: impactDb.chemicals.map(c => `<option value="${c.name}">${c.name}</option>`).join(''),
-      waters: impactDb.waters.map(w => `<option value="${w.name}">${w.name}</option>`).join(''),
+      chemicals: impactDb.chemicals.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`).join(''),
+      waters: impactDb.waters.map(w => `<option value="${escapeHtml(w.name)}">${escapeHtml(w.name)}</option>`).join(''),
     };
   };
   const addChemRow = () => {
