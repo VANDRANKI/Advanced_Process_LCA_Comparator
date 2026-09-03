@@ -18,12 +18,20 @@ const ProcessModal = ({
 
   const dialogRef = useRef(null)
   const previouslyFocusedRef = useRef(null)
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
 
   // Keyboard accessibility: trap Tab within the dialog while open, close on
   // Escape, and restore focus to whatever triggered the modal (the
   // "Add Process" / "Edit" button) once it closes. Without this, a
   // keyboard-only user can tab straight through the dialog into whatever
   // sits behind the overlay, and loses their place entirely on close.
+  //
+  // Keyed on `isOpen` alone (not `onClose`, read via a ref instead): App.jsx
+  // passes an inline onClose defined fresh on every render, and this effect
+  // must not re-run and steal focus back to the trigger button every time a
+  // parent re-render happens to give it a new onClose reference while the
+  // user is mid-edit inside the dialog.
   useEffect(() => {
     if (!isOpen) return
 
@@ -47,7 +55,7 @@ const ProcessModal = ({
 
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        onClose()
+        onCloseRef.current()
         return
       }
       if (e.key !== 'Tab') return
@@ -72,7 +80,7 @@ const ProcessModal = ({
       document.removeEventListener('keydown', handleKeyDown)
       previouslyFocusedRef.current?.focus?.()
     }
-  }, [isOpen, onClose])
+  }, [isOpen])
 
   // Initialize form when editing
   useEffect(() => {
