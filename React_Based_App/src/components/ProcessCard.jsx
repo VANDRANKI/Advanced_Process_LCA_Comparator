@@ -14,6 +14,14 @@ const ProcessCard = ({
     onToggleSelection();
   };
 
+  const handleCardKeyDown = (e) => {
+    if (e.target.closest(".action-button")) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onToggleSelection();
+    }
+  };
+
   const handleDelete = (e) => {
     e.stopPropagation();
     if (confirm("Are you sure you want to delete this process?")) {
@@ -40,8 +48,13 @@ const ProcessCard = ({
           : "border-app-border hover:border-app-primary/50"
       }`}
       onClick={handleCardClick}
+      onKeyDown={handleCardKeyDown}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      role="button"
+      tabIndex={0}
+      aria-pressed={isSelected}
+      aria-label={`${displayName}, ${isSelected ? "selected" : "not selected"}. Press Enter to toggle selection for comparison.`}
     >
       {/* Selection Indicator */}
       {isSelected && (
