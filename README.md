@@ -1,5 +1,7 @@
 ## CMP Slurry Manufacturing, Advanced LCA Modeler
 
+[![React app build and lint](https://github.com/VANDRANKI/Advanced_Process_LCA_Comparator/actions/workflows/react-app.yml/badge.svg?branch=main)](https://github.com/VANDRANKI/Advanced_Process_LCA_Comparator/actions/workflows/react-app.yml)
+
 A single‑page web app to build and compare two process chains (A vs B) for CMP slurry manufacturing. It estimates per‑step energy (kWh), water (kg), and total impact (kg CO₂e) using engineering models and a small inlined database of impact factors (electricity, chemicals, water).
 
 ### Highlights
