@@ -25,12 +25,12 @@ A React + Tailwind CSS version of the CMP Slurry Manufacturing LCA Modeler. This
 
 1. **Install dependencies**:
    ```bash
-   npm install
+   yarn install
    ```
 
 2. **Start development server**:
    ```bash
-   npm run dev
+   yarn dev
    ```
 
 3. **Open your browser** to `http://localhost:3000`
@@ -83,10 +83,10 @@ Stored in localStorage with three categories:
 
 ## Available Scripts
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
+- `yarn dev` - Start development server
+- `yarn build` - Build for production
+- `yarn preview` - Preview production build
+- `yarn lint` - Run ESLint
 
 ## Customization
 
