@@ -1,4 +1,13 @@
 // Process catalog with calculation functions - converted from original app.js
+// Ambient temperature in degC. A plain `Number(x) || 25` would turn a real
+// 0 degC reading (the slider's minimum) into 25, so only fall back when the
+// value is missing or not a number.
+const ambientOrDefault = (ambientC) => {
+  if (ambientC === undefined || ambientC === null || ambientC === '') return 25;
+  const n = Number(ambientC);
+  return Number.isFinite(n) ? n : 25;
+};
+
 export const processCatalog = {
   Calcination: {
     key: 'calcination',
@@ -12,7 +21,7 @@ export const processCatalog = {
     energyKWh: ({ temperatureC, durationH, massKg, ambientC, furnaceEfficiency = 0.6 }) => {
       // Simplified model: Q = m * Cp * ΔT + standby; Cp (ceria) ~ 0.46 kJ/kgK; add 20% overhead; divide by efficiency.
       const cp_kJ_per_kgK = 0.46;
-      const deltaT = Math.max(0, (Number(temperatureC) || 0) - (Number(ambientC) || 25));
+      const deltaT = Math.max(0, (Number(temperatureC) || 0) - ambientOrDefault(ambientC));
       const sensible_kJ = (Number(massKg) || 0) * cp_kJ_per_kgK * deltaT;
       const sensible_kWh = sensible_kJ / 3600; // 1 kWh = 3600 kJ
       const standby_kWh = 1.2 * (Number(durationH) || 0); // 1.2 kW typical furnace baseline draw per hour (example)
@@ -36,7 +45,7 @@ export const processCatalog = {
     energyKWh: ({ temperatureC, durationH, waterToProduct, massKg, ambientC, autoclaveLossW }) => {
       // Approx: heat water to T, Cp_water ~ 4.18 kJ/kgK; water mass = ratio * product mass; add vessel losses.
       const cp_water_kJ_per_kgK = 4.18;
-      const deltaT = Math.max(0, (Number(temperatureC) || 0) - (Number(ambientC) || 25));
+      const deltaT = Math.max(0, (Number(temperatureC) || 0) - ambientOrDefault(ambientC));
       const waterMassKg = (Number(waterToProduct) || 0) * (Number(massKg) || 0);
       const sensible_kJ = waterMassKg * cp_water_kJ_per_kgK * deltaT;
       const sensible_kWh = sensible_kJ / 3600;
@@ -113,7 +122,7 @@ export const processCatalog = {
     energyKWh: ({ temperatureC, waterRemovedKg, ambientC }) => {
       // Heat water from ambient to temp + latent heat. Cp_water 4.18 kJ/kgK; L_vap ~ 2257 kJ/kg.
       const cp = 4.18;
-      const deltaT = Math.max(0, (Number(temperatureC) || 0) - (Number(ambientC) || 25));
+      const deltaT = Math.max(0, (Number(temperatureC) || 0) - ambientOrDefault(ambientC));
       const sensible = (Number(waterRemovedKg) || 0) * cp * deltaT; // kJ
       const latent = (Number(waterRemovedKg) || 0) * 2257; // kJ
       return (sensible + latent) / 3600 * 1.15; // kWh with 15% overhead
@@ -143,7 +152,7 @@ export const processCatalog = {
     energyKWh: ({ temperatureC, durationH, massKg, ambientC }) => {
       // Similar to calcination but lighter: no overhead/efficiency terms for simplicity
       const cp_kJ_per_kgK = 0.46;
-      const deltaT = Math.max(0, (Number(temperatureC) || 0) - (Number(ambientC) || 25));
+      const deltaT = Math.max(0, (Number(temperatureC) || 0) - ambientOrDefault(ambientC));
       const sensible_kJ = (Number(massKg) || 0) * cp_kJ_per_kgK * deltaT;
       const sensible_kWh = sensible_kJ / 3600;
       const baseline_kWh = 0.8 * (Number(durationH) || 0);
